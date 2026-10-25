@@ -1,6 +1,6 @@
-student_id,school_email,full_name,college,date_of_birth,phone,branch,study_year
-DEMO-STU-001,demo.student001@example.com,Demo Student One,Sample College,2007-02-14,,Computer Science,1
-DEMO-STU-002,demo.student002@example.com,Demo Student Two,Sample College,2006-09-03,,Information Technology,2
-DEMO-STU-003,demo.student003@example.com,Demo Student Three,Sample College,2007-05-22,,Business Administration,1
-DEMO-STU-004,demo.student004@example.com,Demo Student Four,Sample College,2005-12-11,,Mathematics,3
-DEMO-STU-005,demo.student005@example.com,Demo Student Five,Sample College,2006-07-30,,Physics,2
+student_id,school_email,full_name,college,date_of_birth,phone,branch,branch_code,admission_year,study_year
+2023CSE277,demo.student001@example.com,Demo Student One,Sample College,2007-02-14,,Computer Science,CSE,2023,1
+2023IT104,demo.student002@example.com,Demo Student Two,Sample College,2006-09-03,,Information Technology,IT,2023,2
+2023BBA052,demo.student003@example.com,Demo Student Three,Sample College,2007-05-22,,Business Administration,BBA,2023,1
+2022MAT118,demo.student004@example.com,Demo Student Four,Sample College,2005-12-11,,Mathematics,MAT,2022,3
+2022PHY031,demo.student005@example.com,Demo Student Five,Sample College,2006-07-30,,Physics,PHY,2022,2

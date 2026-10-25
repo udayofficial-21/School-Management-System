@@ -1,1 +1,1 @@
-student_id,school_email,full_name,college,date_of_birth,phone,branch,study_year
+student_id,school_email,full_name,college,date_of_birth,phone,branch,branch_code,admission_year,study_year

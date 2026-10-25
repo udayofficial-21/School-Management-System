@@ -30,8 +30,12 @@ async function startApplication() {
     if (loginForm) {
         const { data } = await supabase.auth.getSession();
         if (data.session) {
-            window.location.replace('dashboard.html');
-            return;
+            const destination = await getUserDestination(data.session.user.id);
+            if (destination) {
+                window.location.replace(destination);
+                return;
+            }
+            await supabase.auth.signOut();
         }
         initializeLogin(loginForm);
         return;
@@ -40,8 +44,12 @@ async function startApplication() {
     if (registrationForm) {
         const { data } = await supabase.auth.getSession();
         if (data.session) {
-            window.location.replace('dashboard.html');
-            return;
+            const destination = await getUserDestination(data.session.user.id);
+            if (destination) {
+                window.location.replace(destination);
+                return;
+            }
+            await supabase.auth.signOut();
         }
         initializeRegistration(registrationForm);
         return;
@@ -80,7 +88,7 @@ function initializeLogin(form) {
         clearFormMessage(feedback);
         setSubmitState(form, true, 'Signing in…');
         try {
-            const { error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email: emailInput.value.trim(),
                 password: passwordInput.value
             });
@@ -88,14 +96,55 @@ function initializeLogin(form) {
                 showFormMessage(feedback, 'We could not sign you in. Check your school email and password, then try again.', 'danger');
                 return;
             }
-            window.location.assign('dashboard.html');
+            const destination = await getUserDestination(data.user.id);
+            if (!destination) {
+                await supabase.auth.signOut();
+                showFormMessage(feedback, 'This account is not linked to an enrolled student or staff role. Contact your school administrator.', 'danger');
+                return;
+            }
+            window.location.assign(destination);
         } catch (error) {
-            showFormMessage(feedback, 'We could not reach the sign-in service. Check your connection and try again.', 'danger');
+            console.error('Could not check account access.', error);
+            showFormMessage(feedback, 'We could not verify your school account. Ask the administrator to finish the database setup, then try again.', 'danger');
         } finally {
             setSubmitState(form, false);
         }
     });
 }
+
+async function getUserDestination(userId) {
+    const { data: role, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role_name')
+        .eq('user_id', userId)
+        .maybeSingle();
+    if (roleError) throw roleError;
+    if (role) return 'admin.html';
+
+    const { data: profile, error: profileError } = await supabase
+        .from('student_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+    if (profileError) throw profileError;
+    return profile ? 'dashboard.html' : null;
+}
+
+async function routeSignedInUser(userId, feedback) {
+    try {
+        const destination = await getUserDestination(userId);
+        if (!destination) {
+            await supabase.auth.signOut();
+            showFormMessage(feedback, 'Your account is not linked to an enrolled student or staff role. Contact your school administrator.', 'danger');
+            return;
+        }
+        window.location.assign(destination);
+    } catch (error) {
+        console.error('Could not check account access.', error);
+        showFormMessage(feedback, 'Your account was created, but the school database setup is incomplete. Contact your school administrator.', 'warning');
+    }
+}
+
 function initializeRegistration(form) {
     const passwordInput = document.getElementById('regPassword');
     const confirmPasswordInput = document.getElementById('confirmPassword');
@@ -142,7 +191,7 @@ function initializeRegistration(form) {
             form.reset();
             if (data.session) {
                 showFormMessage(feedback, 'Your account is ready. Opening your student portal…', 'success');
-                window.location.assign('dashboard.html');
+                await routeSignedInUser(data.user.id, feedback);
             } else {
                 showFormMessage(feedback, 'Check your school email for a confirmation link, then sign in.', 'success');
             }
@@ -173,6 +222,17 @@ async function initializePortalPage() {
     }
 
     const userId = data.session.user.id;
+    const destination = await getUserDestination(userId);
+    if (destination === 'admin.html') {
+        window.location.replace(destination);
+        return;
+    }
+    if (!destination) {
+        await supabase.auth.signOut();
+        window.location.replace('index.html');
+        return;
+    }
+
     let portalData;
     try {
         portalData = await loadPortalData(userId);
@@ -419,8 +479,49 @@ function renderSemesterResults(records, term, tbodyId) {
     const tbody = document.getElementById(tbodyId);
     if (!tbody) return;
     const semesterRecords = records.filter((record) => record.term === term);
-        });
+    if (!semesterRecords.length) {
+        showTableEmpty(tbody, 6, 'No results have been published for this semester yet.');
+        return;
+    }
+
+    const subjects = new Map();
+    semesterRecords.forEach((record) => {
+        const key = normalizeSubject(record.subject);
+        const subject = subjects.get(key) || {
+            label: String(record.subject || 'Subject').trim(),
+            assessments: {},
+            totalScore: 0,
+            totalMaximum: 0,
+            grades: {}
+        };
+        const score = Number(record.score);
+        const maximum = Number(record.max_score);
+        if (Number.isFinite(score) && Number.isFinite(maximum)) {
+            subject.assessments[record.assessment_type] = `${formatMark(score)} / ${formatMark(maximum)}`;
+            subject.totalScore += score;
+            subject.totalMaximum += maximum;
+        }
+        if (record.grade) subject.grades[record.assessment_type] = record.grade;
+        subjects.set(key, subject);
+    });
+
+    const rows = [...subjects.values()]
+        .sort((left, right) => left.label.localeCompare(right.label))
+        .map((subject) => [
+            subject.label,
+            subject.assessments.midterm || '—',
+            subject.assessments.assignment || '—',
+            subject.assessments.final_exam || '—',
+            subject.totalMaximum > 0
+                ? `${formatMark(subject.totalScore)} / ${formatMark(subject.totalMaximum)}`
+                : '—',
+            subject.grades.final_exam || subject.grades.assignment || subject.grades.midterm || '—'
+        ]);
     renderTableRows(tbody, rows, false);
+}
+
+function formatMark(value) {
+    return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
 function populateTimetable(records) {

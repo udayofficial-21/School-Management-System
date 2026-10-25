@@ -1,40 +1,62 @@
-# Supabase connection and redevelopment guide
+# School Management System: redevelopment guide
 
-## What is in this project
+## Current release
 
-The website is a static HTML/CSS/JavaScript app hosted through GitHub Pages. It now uses the Supabase JavaScript client for authentication and student records. The browser uses only the Supabase Project URL and publishable key. A publishable key is expected to be visible in a browser app; database access is controlled by the SQL grants and Row Level Security policies in `supabase/schema.sql`.
+This is a static website hosted on GitHub Pages, using Supabase for sign-in and its database.
 
-Never put a Supabase secret key or legacy `service_role` key in this project, the browser, or GitHub Pages. Supabase documents that secret keys bypass Row Level Security and must stay server-side.
+- Students and staff use the same sign-in page. After sign-in, the assigned role opens the student portal or the staff administration workspace.
+- School staff enroll students before registration. A student account is linked only when the student enters the matching registration ID and school email and confirms that email.
+- Super Admin manages staff roles and school-wide settings.
+- Chairman, Principal, and Vice Principal can manage the school-wide roster and roll allocation.
+- HOD can manage students and rolls for the assigned branch.
+- Faculty can read the assigned branch roster; email, phone, and date of birth are withheld from the faculty roster view.
+- The database checks each role and branch. Hiding a button in the website is not the security boundary.
 
-## Connect your Supabase project
+## Student identifiers
 
-1. Create a Supabase project and open **SQL Editor**.
-2. Run `supabase/schema.sql`. It creates the profile, attendance, results, timetable, announcements, and events tables; enables Row Level Security; and adds the roster-linking Auth trigger.
-3. Before students register, add each approved student to `public.student_profiles` using **Table Editor** or a CSV import. Include `student_id`, `school_email`, `full_name`, and any profile fields the school has approved. Leave `user_id` empty. Self-registration only succeeds when both the Student ID and school email match an unused roster row. The row is linked to the account only after email confirmation.
-4. In **Project Settings → API**, copy the Project URL and the publishable key (starts with `sb_publishable_`). Put those two values in `supabase-config.js`. Do not copy a secret key.
-5. In **Authentication → URL Configuration**, set the Site URL to your deployed site, and add these redirect URLs:
-   - `https://udayofficial-21.github.io/School-Management-System/index.html`
-   - `http://localhost:8000/index.html` for local preview
-6. Keep email confirmation enabled. The registration page asks students to confirm their school email before sign-in. Supabase requires the redirect URL to be on the project's allow-list.
-7. Preview over HTTP, not by opening an HTML file directly. From this folder, run `python -m http.server 8000`, then open `http://localhost:8000/`.
-8. Deploy the updated files to GitHub Pages. The published demo will not use these changes until the files are deployed.
+The school-approved registration ID is generated from the admission year, branch code, and a unique number. For example, 2023 + CSE + 277 becomes 2023CSE277.
 
-The browser client is in `supabase-client.js`; edit sign-in, registration, data reads, and settings in `script.js`. The current setup supports the **student experience**. Roster management and writing attendance, grades, timetable, announcements, and events must be done in the Supabase dashboard for now. A later release should add admin and teacher roles with carefully scoped write policies and screens.
+The separate roll number is allocated from the school format. The default template is {YY}{COLLEGE}{BRANCH}{NUMBER}; with year 2023, college code A05, branch CSE, and sequence 1, it becomes 23A05CSE0001. The number is sequential and unique rather than random, which prevents duplicate roll numbers. The Super Admin can customize the template in the administration overview. Supported tokens are {YY}, {YEAR}, {COLLEGE}, {BRANCH}, and {NUMBER}.
 
-## Record behavior
+## Supabase setup
 
-- Students can read only their own profile, attendance, published results, and timetable.
-- Students can read school-wide published announcements and events.
-- Students can update only their own name and phone number. The school email, Student ID, attendance, and grades are read-only in the browser.
-- Attendance percentage currently counts `present` and `late` as attended and excludes `excused` from the denominator. Confirm this rule with the school before using real attendance data.
-- Semester results are shown only after a staff member marks them `published`.
+1. In the Supabase SQL Editor, run supabase/schema.sql. This creates or updates the tables, role rules, enrollment functions, and allocation functions. It does not delete student data.
+2. The project URL and publishable key are in supabase-config.js. Only a publishable key belongs in the website. Never add a secret or service-role key.
+3. In Authentication → URL Configuration, allow the deployed site and the local preview address:
+   - https://udayofficial-21.github.io/School-Management-System/index.html
+   - http://localhost:8000/index.html
+4. Keep email confirmation enabled.
 
-## Recommended next release
+## First Super Admin
 
-1. Add admin and teacher authentication with server-controlled roles.
-2. Add roster import, class/subject assignment, attendance entry, and mark publishing screens.
-3. Scope teacher write access to assigned classes; keep database policies as the final permission check.
-4. Add password recovery, audit history, CSV/PDF reports, mobile/keyboard review, and data backup procedures.
-5. Test RLS as an anonymous user, a student, a teacher, and an administrator before loading real student data.
+There is no public Admin sign-up. This prevents students from giving themselves staff permissions.
 
-Until those staff workflows and role policies are implemented, this is a Supabase-connected student portal foundation, not a complete school operations system.
+1. Open supabase/bootstrap-admin.sql and replace REPLACE_WITH_ADMIN_EMAIL with the first Super Admin's email address.
+2. Run that edited file in the Supabase SQL Editor.
+3. In Supabase Authentication → Users, choose Add user and send an invitation to the same email address.
+4. The person opens the invitation email and finishes account setup. The database then assigns the Super Admin role.
+5. Sign in through the same website login page. The Super Admin workspace opens automatically.
+
+After the first Super Admin signs in, use Staff access to assign Chairman, Principal, Vice Principal, HOD, Faculty, or additional Super Admin roles. For a new staff email, the app prepares the role invitation; send the actual account invitation from Supabase Authentication → Users. The role activates after email confirmation.
+
+## School setup and daily use
+
+1. On Administration overview, enter the school name and the college ID supplied by the institution. Choose the roll-number template and save it.
+2. Open Students and add an approved student. Enter the name, school email, admission year, branch name, branch code, and any details the school needs. The app generates the registration ID.
+3. Open Roll allocation, select eligible students, and allocate their unique roll numbers.
+4. Give each student their registration ID and the school email that was entered in the roster.
+5. The student opens Register here, enters that exact ID and email, chooses a password, and confirms the email. They then sign in on the shared login page.
+
+The CSV in supabase/student-roster-demo.csv contains fictional sample rows only. Do not import those sample email addresses as real students. Use supabase/student-roster-template.csv for a real, approved roster.
+
+## Preview and publish
+
+For a local preview, open PowerShell in D:/School-Management-System and run:
+
+    python -m http.server 8000
+
+Keep that window open, then visit http://localhost:8000/index.html. The current project is connected to the GitHub repository and uses the main branch. GitHub Pages publishes at https://udayofficial-21.github.io/School-Management-System/.
+
+## Current limits
+
+This release covers role-based sign-in, student roster management, role assignment, and roll allocation. Staff screens for entering attendance, grades, timetables, announcements, and events are not included yet. Those features need their own scoped database permissions and workflows before school staff can edit those records in the browser.
