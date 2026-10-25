@@ -10,31 +10,32 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-light">
+<body class="auth-page">
     <div class="container">
-        <div class="row justify-content-center mt-5">
+        <div class="row justify-content-center">
             <div class="col-md-6 col-lg-5">
                 <div class="card shadow">
                     <div class="card-body p-5">
                         <div class="text-center mb-4">
                             <i class="bi bi-mortarboard-fill text-primary" style="font-size: 3rem;"></i>
                             <h2 class="mt-2">Student Login</h2>
-                            <p class="text-muted">Enter your credentials to access your account</p>
+                            <p class="text-muted">Sign in with the email registered by your school</p>
                         </div>
+                        <div id="supabaseSetupNotice" class="alert alert-warning d-none" role="status"></div>
                         <form id="loginForm">
                             <div class="mb-3">
-                                <label for="studentId" class="form-label">Student ID</label>
+                                <label for="loginEmail" class="form-label">School email</label>
                                 <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
-                                    <input type="text" class="form-control" id="studentId" placeholder="Enter your student ID" required>
+                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                    <input type="email" class="form-control" id="loginEmail" placeholder="name@school.edu" autocomplete="username" required>
                                 </div>
                             </div>
                             <div class="mb-3">
                                 <label for="password" class="form-label">Password</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                                    <input type="password" class="form-control" id="password" placeholder="Enter your password" required>
-                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                    <input type="password" class="form-control" id="password" placeholder="Enter your password" autocomplete="current-password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword" aria-label="Show password">
                                         <i class="bi bi-eye"></i>
                                     </button>
                                 </div>
@@ -42,13 +43,13 @@
                             <div class="d-grid gap-2 mt-4">
                                 <button type="submit" class="btn btn-primary">Login <i class="bi bi-box-arrow-in-right ms-1"></i></button>
                             </div>
-                            <div id="loginError" class="alert alert-danger mt-3 d-none">
-                                Invalid student ID or password. Please try again.
+                            <div id="loginError" class="alert alert-danger mt-3 d-none" tabindex="-1">
+                                We could not sign you in. Check your school email and password, then try again.
                             </div>
                         </form>
                         <div class="text-center mt-4">
                             <p>New student? <a href="register.html" class="text-decoration-none">Register here</a></p>
-                            <p>Login credentials are?<br> Student Id: 23471A05D3 <br> Password : 23471A05D3 </a></p>
+                            <p class="small text-muted mb-0">Student access is linked to an approved school roster. Contact your school administrator if you need help.</p>
                         </div>
                     </div>
                 </div>
@@ -58,8 +59,8 @@
 
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 
-</html> 
+</html>
 

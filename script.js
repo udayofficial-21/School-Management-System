@@ -1,398 +1,704 @@
-// DOM Elements
-document.addEventListener('DOMContentLoaded', function() {
-    // Check which page we're on
-    const isLoginPage = document.getElementById('loginForm');
-    const isRegistrationPage = document.getElementById('registrationForm');
-    const isDashboardPage = document.getElementById('profile');
+import { isSupabaseConfigured, supabase } from './supabase-client.js';
 
-    // Initialize page-specific features
-    if (isLoginPage) {
-        initLoginPage();
-    } else if (isRegistrationPage) {
-        initRegistrationPage();
-    } else if (isDashboardPage) {
-        initDashboardPage();
-    }
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const ASSESSMENT_TYPES = [
+    { key: 'midterm', label: 'Mid-Term' },
+    { key: 'assignment', label: 'Assignment' },
+    { key: 'final_exam', label: 'Final Exam' }
+];
+
+window.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-current-year]').forEach((element) => {
+        element.textContent = String(new Date().getFullYear());
+    });
+    startApplication().catch((error) => {
+        console.error('The portal could not start.', error);
+        showPageAlert('The portal could not load. Refresh the page or contact the school administrator.', 'danger');
+    });
 });
 
-// Initialize the login page
-function initLoginPage() {
+async function startApplication() {
     const loginForm = document.getElementById('loginForm');
-    const studentIdInput = document.getElementById('studentId');
-    const passwordInput = document.getElementById('password');
-    const loginError = document.getElementById('loginError');
-    const togglePassword = document.getElementById('togglePassword');
-
-    // Handle password visibility toggle
-    togglePassword.addEventListener('click', function() {
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        this.querySelector('i').classList.toggle('bi-eye');
-        this.querySelector('i').classList.toggle('bi-eye-slash');
-    });
-
-    // Handle login form submission
-    loginForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const studentId = studentIdInput.value.trim();
-        const password = passwordInput.value.trim();
-        
-        // Check default credentials (as per requirements)
-        if (studentId === '23471A05D3' && password === '23471A05D3') {
-            // Store logged-in status
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('studentId', studentId);
-            
-            // Use default student data if no custom data exists
-            if (!localStorage.getItem('studentData')) {
-                const defaultStudentData = {
-                    name: 'John Doe',
-                    college: 'ABC Engineering College',
-                    dob: '2000-01-15',
-                    phone: '9876543210',
-                    branch: 'Computer Science',
-                    year: '3',
-                    attendance: {
-                        english: 85,
-                        maths: 73,
-                        science: 90
-                    },
-                    marks: {
-                        english: 82,
-                        maths: 75,
-                        science: 91
-                    }
-                };
-                localStorage.setItem('studentData', JSON.stringify(defaultStudentData));
-            }
-            
-            // Redirect to dashboard
-            window.location.href = 'dashboard.html';
-        } else {
-            // Check if registered user exists
-            const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-            const user = registeredUsers.find(u => u.studentId === studentId && u.password === password);
-            
-            if (user) {
-                // Store logged-in status and user data
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('studentId', studentId);
-                
-                // Create student data if it doesn't exist
-                if (!localStorage.getItem(`studentData_${studentId}`)) {
-                    const studentData = {
-                        name: user.name,
-                        college: user.college,
-                        dob: user.dob,
-                        phone: user.phone,
-                        branch: user.branch,
-                        year: user.year,
-                        attendance: {
-                            english: getRandomNumber(70, 95),
-                            maths: getRandomNumber(70, 95),
-                            science: getRandomNumber(70, 95)
-                        },
-                        marks: {
-                            english: getRandomNumber(60, 95),
-                            maths: getRandomNumber(60, 95),
-                            science: getRandomNumber(60, 95)
-                        }
-                    };
-                    localStorage.setItem(`studentData_${studentId}`, JSON.stringify(studentData));
-                }
-                
-                // Redirect to dashboard
-                window.location.href = 'dashboard.html';
-            } else {
-                // Show error message
-                loginError.classList.remove('d-none');
-                setTimeout(() => {
-                    loginError.classList.add('d-none');
-                }, 3000);
-            }
-        }
-    });
-}
-
-// Initialize the registration page
-function initRegistrationPage() {
     const registrationForm = document.getElementById('registrationForm');
-    const toggleRegPassword = document.getElementById('toggleRegPassword');
-    const regPasswordInput = document.getElementById('regPassword');
-    
-    // Handle password visibility toggle
-    toggleRegPassword.addEventListener('click', function() {
-        const type = regPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        regPasswordInput.setAttribute('type', type);
-        this.querySelector('i').classList.toggle('bi-eye');
-        this.querySelector('i').classList.toggle('bi-eye-slash');
-    });
-    
-    // Handle registration form submission
-    registrationForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Get form values
-        const name = document.getElementById('studentName').value.trim();
-        const college = document.getElementById('college').value.trim();
-        const dob = document.getElementById('dob').value;
-        const phone = document.getElementById('phoneNumber').value.trim();
-        const branch = document.getElementById('branch').value;
-        const year = document.getElementById('year').value;
-        const studentId = document.getElementById('regStudentId').value.trim();
-        const password = document.getElementById('regPassword').value.trim();
-        
-        // Get existing registered users or initialize an empty array
-        const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-        
-        // Check if user already exists
-        if (registeredUsers.some(user => user.studentId === studentId)) {
-            alert('A user with this Student ID already exists. Please use a different ID.');
-            return;
-        }
-        
-        // Add new user
-        registeredUsers.push({
-            name,
-            college,
-            dob,
-            phone,
-            branch,
-            year,
-            studentId,
-            password
-        });
-        
-        // Save to localStorage
-        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-        
-        // Generate random attendance and marks
-        const studentData = {
-            name,
-            college,
-            dob,
-            phone,
-            branch,
-            year,
-            attendance: {
-                english: getRandomNumber(70, 95),
-                maths: getRandomNumber(70, 95),
-                science: getRandomNumber(70, 95)
-            },
-            marks: {
-                english: getRandomNumber(60, 95),
-                maths: getRandomNumber(60, 95),
-                science: getRandomNumber(60, 95)
-            }
-        };
-        
-        // Save student data
-        localStorage.setItem(`studentData_${studentId}`, JSON.stringify(studentData));
-        
-        // Show success message and redirect
-        alert('Registration successful! Please login with your credentials.');
-        window.location.href = 'index.html';
-    });
-}
+    const protectedPage = Boolean(document.getElementById('welcomeMessage'));
 
-// Initialize the dashboard page
-function initDashboardPage() {
-    // Check if user is logged in
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
-    const studentId = localStorage.getItem('studentId');
-    
-    if (!isLoggedIn || !studentId) {
-        // Redirect to login if not logged in
-        window.location.href = 'index.html';
+    if (!isSupabaseConfigured) {
+        showConfigurationNotice(loginForm, registrationForm, protectedPage);
         return;
     }
-    
-    // Load student data
-    let studentData;
-    if (studentId === '23471A05D3') {
-        // Default user
-        studentData = JSON.parse(localStorage.getItem('studentData'));
-    } else {
-        // Registered user
-        studentData = JSON.parse(localStorage.getItem(`studentData_${studentId}`));
+
+    if (loginForm) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+            window.location.replace('dashboard.html');
+            return;
+        }
+        initializeLogin(loginForm);
+        return;
     }
-    
-    // Populate dashboard with student data
-    populateDashboard(studentData, studentId);
-    
-    // Initialize settings
-    initSettings(studentData, studentId);
-    
-    // Initialize charts
-    initMarksChart(studentData.marks);
-    
-    // Handle logout
-    document.getElementById('logoutBtn').addEventListener('click', function() {
-        localStorage.removeItem('isLoggedIn');
-        window.location.href = 'index.html';
+
+    if (registrationForm) {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+            window.location.replace('dashboard.html');
+            return;
+        }
+        initializeRegistration(registrationForm);
+        return;
+    }
+
+    if (protectedPage) await initializePortalPage();
+}
+
+function showConfigurationNotice(loginForm, registrationForm, protectedPage) {
+    const message = 'Connect your Supabase project first. Add its Project URL and publishable key in supabase-config.js.';
+    const notice = document.getElementById('supabaseSetupNotice');
+    if (notice) {
+        notice.textContent = message;
+        notice.classList.remove('d-none');
+    } else if (loginForm || registrationForm) {
+        const form = loginForm || registrationForm;
+        showFormMessage(form.querySelector('[data-form-message]'), message, 'warning');
+    } else if (protectedPage) {
+        showPageAlert(message, 'warning');
+    }
+
+    document.querySelectorAll('form button[type="submit"]').forEach((button) => {
+        button.disabled = true;
     });
 }
 
-// Populate dashboard with student data
-function populateDashboard(studentData, studentId) {
-    // Welcome message
-    document.getElementById('welcomeMessage').textContent = `Welcome, ${studentData.name}`;
-    document.getElementById('dashboardStudentId').textContent = studentId;
-    
-    // Profile section
-    document.getElementById('profileName').textContent = studentData.name;
-    document.getElementById('profileBranch').textContent = studentData.branch;
-    document.getElementById('profileCollege').textContent = studentData.college;
-    document.getElementById('profileDob').textContent = formatDate(studentData.dob);
-    document.getElementById('profilePhone').textContent = studentData.phone;
-    document.getElementById('profileYear').textContent = getYearText(studentData.year);
-    
-    // Attendance section
-    document.getElementById('englishAttendance').textContent = `${studentData.attendance.english}%`;
-    document.getElementById('englishProgress').style.width = `${studentData.attendance.english}%`;
-    document.getElementById('englishProgress').setAttribute('aria-valuenow', studentData.attendance.english);
-    
-    document.getElementById('mathsAttendance').textContent = `${studentData.attendance.maths}%`;
-    document.getElementById('mathsProgress').style.width = `${studentData.attendance.maths}%`;
-    document.getElementById('mathsProgress').setAttribute('aria-valuenow', studentData.attendance.maths);
-    
-    document.getElementById('scienceAttendance').textContent = `${studentData.attendance.science}%`;
-    document.getElementById('scienceProgress').style.width = `${studentData.attendance.science}%`;
-    document.getElementById('scienceProgress').setAttribute('aria-valuenow', studentData.attendance.science);
-    
-    // Marks section
-    document.getElementById('englishMarks').textContent = studentData.marks.english;
-    document.getElementById('englishMarksProgress').style.width = `${studentData.marks.english}%`;
-    document.getElementById('englishMarksProgress').setAttribute('aria-valuenow', studentData.marks.english);
-    
-    document.getElementById('mathsMarks').textContent = studentData.marks.maths;
-    document.getElementById('mathsMarksProgress').style.width = `${studentData.marks.maths}%`;
-    document.getElementById('mathsMarksProgress').setAttribute('aria-valuenow', studentData.marks.maths);
-    
-    document.getElementById('scienceMarks').textContent = studentData.marks.science;
-    document.getElementById('scienceMarksProgress').style.width = `${studentData.marks.science}%`;
-    document.getElementById('scienceMarksProgress').setAttribute('aria-valuenow', studentData.marks.science);
-}
+function initializeLogin(form) {
+    const emailInput = document.getElementById('loginEmail');
+    const passwordInput = document.getElementById('password');
+    const togglePassword = document.getElementById('togglePassword');
+    const feedback = document.getElementById('loginError');
 
-// Initialize settings modal
-function initSettings(studentData, studentId) {
-    const settingsForm = document.getElementById('settingsForm');
-    const nameInput = document.getElementById('editName');
-    const phoneInput = document.getElementById('editPhone');
-    
-    // Populate form with current data
-    nameInput.value = studentData.name;
-    phoneInput.value = studentData.phone;
-    
-    // Handle settings form submission
-    settingsForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        // Update student data
-        studentData.name = nameInput.value.trim();
-        studentData.phone = phoneInput.value.trim();
-        
-        // Update password if provided
-        const newPassword = document.getElementById('editPassword').value.trim();
-        if (newPassword) {
-            // Update password in registered users
-            if (studentId !== '23471A05D3') {
-                const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers')) || [];
-                const userIndex = registeredUsers.findIndex(u => u.studentId === studentId);
-                if (userIndex !== -1) {
-                    registeredUsers[userIndex].password = newPassword;
-                    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-                }
-            } else {
-                // For default user, we just store the updated password
-                localStorage.setItem('defaultPassword', newPassword);
+    setupPasswordToggle(togglePassword, passwordInput);
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        clearFormMessage(feedback);
+        setSubmitState(form, true, 'Signing in…');
+        try {
+            const { error } = await supabase.auth.signInWithPassword({
+                email: emailInput.value.trim(),
+                password: passwordInput.value
+            });
+            if (error) {
+                showFormMessage(feedback, 'We could not sign you in. Check your school email and password, then try again.', 'danger');
+                return;
             }
+            window.location.assign('dashboard.html');
+        } catch (error) {
+            showFormMessage(feedback, 'We could not reach the sign-in service. Check your connection and try again.', 'danger');
+        } finally {
+            setSubmitState(form, false);
         }
-        
-        // Save updated student data
-        if (studentId === '23471A05D3') {
-            localStorage.setItem('studentData', JSON.stringify(studentData));
-        } else {
-            localStorage.setItem(`studentData_${studentId}`, JSON.stringify(studentData));
+    });
+}
+function initializeRegistration(form) {
+    const passwordInput = document.getElementById('regPassword');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const feedback = document.getElementById('registrationFeedback');
+    setupPasswordToggle(document.getElementById('toggleRegPassword'), passwordInput);
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        clearFormMessage(feedback);
+        const studentId = document.getElementById('regStudentId').value.trim();
+        const email = document.getElementById('schoolEmail').value.trim().toLowerCase();
+        const password = passwordInput.value;
+
+        if (password !== confirmPasswordInput.value) {
+            showFormMessage(feedback, 'The passwords do not match.', 'danger');
+            confirmPasswordInput.focus();
+            return;
         }
-        
-        // Update UI
-        document.getElementById('welcomeMessage').textContent = `Welcome, ${studentData.name}`;
-        document.getElementById('profileName').textContent = studentData.name;
-        document.getElementById('profilePhone').textContent = studentData.phone;
-        
-        // Close modal and show success message
-        const modal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
-        modal.hide();
-        
-        alert('Profile updated successfully!');
+
+        setSubmitState(form, true, 'Creating account…');
+        try {
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: { student_id: studentId },
+                    emailRedirectTo: new URL('index.html', window.location.href).toString()
+                }
+            });
+
+            if (error) {
+                const errorMessage = error.message?.toLowerCase() || '';
+                const rosterMessage = errorMessage.includes('roster entry') || errorMessage.includes('student id and school email');
+                showFormMessage(
+                    feedback,
+                    rosterMessage
+                        ? 'We could not match that Student ID and school email to the school roster. Contact the school administrator.'
+                        : 'We could not create the account. Check your details or contact the school administrator.',
+                    'danger'
+                );
+                return;
+            }
+
+            form.reset();
+            if (data.session) {
+                showFormMessage(feedback, 'Your account is ready. Opening your student portal…', 'success');
+                window.location.assign('dashboard.html');
+            } else {
+                showFormMessage(feedback, 'Check your school email for a confirmation link, then sign in.', 'success');
+            }
+        } catch (error) {
+            showFormMessage(feedback, 'We could not reach the sign-up service. Check your connection and try again.', 'danger');
+        } finally {
+            setSubmitState(form, false);
+        }
+    });
+}
+function setupPasswordToggle(button, input) {
+    if (!button || !input) return;
+    button.addEventListener('click', () => {
+        const reveal = input.type === 'password';
+        input.type = reveal ? 'text' : 'password';
+        button.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+        const icon = button.querySelector('i');
+        if (icon) icon.classList.toggle('bi-eye-slash', reveal);
+        if (icon) icon.classList.toggle('bi-eye', !reveal);
     });
 }
 
-// Initialize marks chart
-function initMarksChart(marks) {
-    const ctx = document.getElementById('marksChart').getContext('2d');
-    
-    const chart = new Chart(ctx, {
+async function initializePortalPage() {
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session) {
+        window.location.replace('index.html');
+        return;
+    }
+
+    const userId = data.session.user.id;
+    let portalData;
+    try {
+        portalData = await loadPortalData(userId);
+    } catch (loadError) {
+        console.error('Could not load student records.', loadError);
+        showPageAlert('Your school records could not be loaded. Check the Supabase setup or contact the school administrator.', 'danger');
+        initializeLogout();
+        return;
+    }
+
+    populateSharedProfile(portalData.profile);
+    populateAttendance(portalData.attendance);
+    populateMarks(portalData.results);
+    populateTimetable(portalData.timetable);
+    populateDashboardUpdates(portalData.announcements, portalData.events);
+    initializeSettings(portalData.profile, userId, data.session.user.email || '');
+    initializeLogout();
+    setActiveNavigation();
+}
+
+async function loadPortalData(userId) {
+    const [profileResult, attendanceResult, resultsResult, timetableResult, announcementsResult, eventsResult] = await Promise.all([
+        supabase.from('student_profiles')
+            .select('user_id, student_id, school_email, full_name, college, date_of_birth, phone, branch, study_year')
+            .eq('user_id', userId)
+            .single(),
+        supabase.from('attendance_records')
+            .select('subject, class_date, status')
+            .eq('user_id', userId)
+            .order('class_date', { ascending: false })
+            .limit(1000),
+        supabase.from('assessment_results')
+            .select('subject, term, assessment_type, score, max_score, grade, graded_at')
+            .eq('user_id', userId)
+            .eq('published', true)
+            .order('graded_at', { ascending: false })
+            .limit(1000),
+        supabase.from('student_timetable')
+            .select('day_of_week, start_time, end_time, subject, room')
+            .eq('user_id', userId)
+            .order('day_of_week')
+            .order('start_time'),
+        supabase.from('school_announcements')
+            .select('title, body, published_at')
+            .eq('published', true)
+            .order('published_at', { ascending: false })
+            .limit(5),
+        supabase.from('school_events')
+            .select('title, description, event_date, location')
+            .eq('published', true)
+            .gte('event_date', new Date().toISOString())
+            .order('event_date')
+            .limit(5)
+    ]);
+
+    const results = [profileResult, attendanceResult, resultsResult, timetableResult, announcementsResult, eventsResult];
+    const failed = results.find((result) => result.error);
+    if (failed) throw failed.error;
+
+    return {
+        profile: profileResult.data,
+        attendance: attendanceResult.data || [],
+        results: resultsResult.data || [],
+        timetable: timetableResult.data || [],
+        announcements: announcementsResult.data || [],
+        events: eventsResult.data || []
+    };
+}
+
+function populateSharedProfile(profile) {
+    setText('welcomeMessage', `Welcome, ${profile.full_name || 'Student'}`);
+    setText('dashboardStudentId', profile.student_id);
+
+    const values = {
+        profileName: profile.full_name,
+        profileBranch: profile.branch,
+        profileCollege: profile.college,
+        profileDob: profile.date_of_birth ? formatDate(profile.date_of_birth) : 'Not provided',
+        profilePhone: profile.phone,
+        profileYear: profile.study_year ? getYearText(profile.study_year) : 'Not provided',
+        settingsProfileName: profile.full_name,
+        settingsStudentId: profile.student_id
+    };
+    Object.entries(values).forEach(([id, value]) => setText(id, value));
+}
+
+function populateAttendance(records) {
+    const subjectNames = getSubjectNames(records);
+    const attendanceMetrics = subjectNames.map((subjectName) => {
+        const subjectRows = records.filter((record) => normalizeSubject(record.subject) === normalizeSubject(subjectName));
+        const eligible = subjectRows.filter((record) => record.status !== 'excused');
+        const attended = eligible.filter((record) => record.status === 'present' || record.status === 'late').length;
+        return {
+            label: subjectName,
+            value: eligible.length ? Math.round((attended / eligible.length) * 100) : null
+        };
+    });
+    renderMetricCards('attendanceSubjectCards', attendanceMetrics, 'Attendance has not been published yet.');
+
+    const head = document.getElementById('attendanceDetailHead');
+    const tbody = document.getElementById('attendanceDetailRows');
+    if (!tbody) return;
+    if (head) {
+        const headerRow = document.createElement('tr');
+        ['Month', ...subjectNames, 'Overall'].forEach((label) => {
+            const cell = document.createElement('th');
+            cell.scope = 'col';
+            cell.textContent = label;
+            headerRow.append(cell);
+        });
+        head.replaceChildren(headerRow);
+    }
+
+    const months = groupBy(records, (record) => String(record.class_date).slice(0, 7));
+    if (!months.size) {
+        showTableEmpty(tbody, subjectNames.length + 2, 'No monthly attendance has been published yet.');
+        return;
+    }
+
+    const rows = [...months.entries()].sort(([a], [b]) => b.localeCompare(a)).map(([monthKey, monthRecords]) => {
+        const subjectRates = subjectNames.map((subjectName) => {
+            const subjectRecords = monthRecords.filter((record) => normalizeSubject(record.subject) === normalizeSubject(subjectName));
+            const eligible = subjectRecords.filter((record) => record.status !== 'excused');
+            const attended = eligible.filter((record) => record.status === 'present' || record.status === 'late').length;
+            return eligible.length ? Math.round((attended / eligible.length) * 100) : null;
+        });
+        const eligibleAll = monthRecords.filter((record) => record.status !== 'excused');
+        const attendedAll = eligibleAll.filter((record) => record.status === 'present' || record.status === 'late').length;
+        const overall = eligibleAll.length ? Math.round((attendedAll / eligibleAll.length) * 100) : null;
+        return [formatMonth(monthKey), ...subjectRates, overall];
+    });
+    renderTableRows(tbody, rows, true);
+}
+function populateMarks(records) {
+    const summaryBySubject = new Map();
+    records.forEach((record) => {
+        const key = normalizeSubject(record.subject);
+        const current = summaryBySubject.get(key) || { label: record.subject, score: 0, max: 0 };
+        current.score += Number(record.score) || 0;
+        current.max += Number(record.max_score) || 0;
+        summaryBySubject.set(key, current);
+    });
+
+    const summaries = [...summaryBySubject.values()]
+        .sort((a, b) => a.label.localeCompare(b.label))
+        .map((subject) => ({
+            label: subject.label,
+            value: subject.max > 0 ? Math.round((subject.score / subject.max) * 100) : null
+        }));
+    renderMetricCards('marksSubjectCards', summaries, 'No published marks yet.');
+    renderSemesterResults(records, 'semester_1', 'semester1Rows');
+    renderSemesterResults(records, 'semester_2', 'semester2Rows');
+
+    const canvas = document.getElementById('marksChart');
+    if (!canvas) return;
+    if (!summaries.some((item) => item.value !== null)) {
+        canvas.hidden = true;
+        addEmptyState(canvas, 'Marks will appear here after your school publishes results.');
+        return;
+    }
+    if (typeof Chart === 'undefined') return;
+
+    const colors = ['rgba(59, 130, 246, .72)', 'rgba(245, 158, 11, .72)', 'rgba(16, 185, 129, .72)', 'rgba(139, 92, 246, .72)', 'rgba(236, 72, 153, .72)'];
+    new Chart(canvas.getContext('2d'), {
         type: 'bar',
         data: {
-            labels: ['English', 'Mathematics', 'Science'],
+            labels: summaries.map((item) => item.label),
             datasets: [{
-                label: 'Marks',
-                data: [marks.english, marks.maths, marks.science],
-                backgroundColor: [
-                    'rgba(13, 202, 240, 0.6)',
-                    'rgba(255, 193, 7, 0.6)',
-                    'rgba(25, 135, 84, 0.6)'
-                ],
-                borderColor: [
-                    'rgba(13, 202, 240, 1)',
-                    'rgba(255, 193, 7, 1)',
-                    'rgba(25, 135, 84, 1)'
-                ],
-                borderWidth: 1
+                label: 'Average score (%)',
+                data: summaries.map((item) => item.value),
+                backgroundColor: summaries.map((_, index) => colors[index % colors.length]),
+                borderRadius: 8,
+                maxBarThickness: 58
             }]
         },
         options: {
             responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                title: {
-                    display: true,
-                    text: 'Performance Overview'
-                }
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, max: 100, ticks: { stepSize: 20 } } },
+            plugins: { legend: { display: false }, title: { display: true, text: 'Published results by subject' } }
+        }
+    });
+}
+function getSubjectNames(records) {
+    const subjects = new Map();
+    records.forEach((record) => {
+        const label = String(record.subject || '').trim();
+        if (label && !subjects.has(normalizeSubject(label))) subjects.set(normalizeSubject(label), label);
+    });
+    return [...subjects.values()].sort((a, b) => a.localeCompare(b));
+}
+
+function renderMetricCards(containerId, metrics, emptyMessage) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.replaceChildren();
+    if (!metrics.length) {
+        const empty = document.createElement('p');
+        empty.className = 'empty-state text-muted text-center col-12 py-4 mb-0';
+        empty.textContent = emptyMessage;
+        container.append(empty);
+        return;
+    }
+
+    const accents = ['bg-primary', 'bg-info', 'bg-success', 'bg-warning', 'bg-danger'];
+    metrics.forEach((metric, index) => {
+        const column = document.createElement('div');
+        column.className = 'col-sm-6 col-xl-4';
+        const card = document.createElement('article');
+        card.className = 'card h-100 border-0 shadow-sm subject-metric-card';
+        const body = document.createElement('div');
+        body.className = 'card-body';
+        const heading = document.createElement('h5');
+        heading.className = 'card-title mb-3';
+        heading.textContent = metric.label;
+        const valueRow = document.createElement('div');
+        valueRow.className = 'd-flex justify-content-between align-items-baseline mb-2';
+        const caption = document.createElement('span');
+        caption.className = 'small text-muted';
+        caption.textContent = 'Published';
+        const value = document.createElement('strong');
+        value.className = 'subject-metric-value';
+        value.textContent = metric.value === null ? 'No records' : `${metric.value}%`;
+        valueRow.append(caption, value);
+        const progress = document.createElement('div');
+        progress.className = 'progress';
+        progress.setAttribute('role', 'progressbar');
+        progress.setAttribute('aria-valuemin', '0');
+        progress.setAttribute('aria-valuemax', '100');
+        const bar = document.createElement('div');
+        bar.className = `progress-bar ${accents[index % accents.length]}`;
+        const numericValue = metric.value === null ? 0 : Math.min(100, Math.max(0, metric.value));
+        bar.style.width = `${numericValue}%`;
+        progress.setAttribute('aria-valuenow', String(numericValue));
+        progress.setAttribute('aria-valuetext', metric.value === null ? 'No records published' : `${metric.value} percent`);
+        progress.append(bar);
+        body.append(heading, valueRow, progress);
+        card.append(body);
+        column.append(card);
+        container.append(column);
+    });
+}
+function renderSemesterResults(records, term, tbodyId) {
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    const semesterRecords = records.filter((record) => record.term === term);
+        });
+    renderTableRows(tbody, rows, false);
+}
+
+function populateTimetable(records) {
+    const tbody = document.getElementById('timetableRows');
+    if (!tbody) return;
+    if (!records.length) {
+        showTableEmpty(tbody, 4, 'Your school timetable has not been published yet.');
+        return;
+    }
+    const rows = records.map((record) => [
+        DAYS[Number(record.day_of_week) - 1] || '—',
+        `${formatTime(record.start_time)}–${formatTime(record.end_time)}`,
+        record.subject,
+        record.room || '—'
+    ]);
+    renderTableRows(tbody, rows, false);
+}
+
+function populateDashboardUpdates(announcements, events) {
+    const announcementList = document.getElementById('announcementList');
+    if (announcementList) {
+        announcementList.replaceChildren();
+        if (!announcements.length) {
+            addEmptyState(announcementList, 'School announcements will appear here.');
+        } else {
+            announcements.forEach((item) => {
+                const article = document.createElement('article');
+                article.className = 'update-item';
+                const heading = document.createElement('h6');
+                heading.textContent = item.title;
+                const body = document.createElement('p');
+                body.className = 'small text-muted mb-1';
+                body.textContent = item.body;
+                const date = document.createElement('small');
+                date.className = 'text-muted';
+                date.textContent = item.published_at ? formatDateTime(item.published_at) : '';
+                article.append(heading, body, date);
+                announcementList.append(article);
+            });
+        }
+    }
+
+    const eventList = document.getElementById('upcomingEventsList');
+    if (eventList) {
+        eventList.replaceChildren();
+        if (!events.length) {
+            addEmptyState(eventList, 'No upcoming events have been published.');
+        } else {
+            events.forEach((item) => {
+                const article = document.createElement('article');
+                article.className = 'update-item';
+                const heading = document.createElement('h6');
+                heading.textContent = item.title;
+                const description = document.createElement('p');
+                description.className = 'small text-muted mb-1';
+                description.textContent = [item.description, item.location].filter(Boolean).join(' · ');
+                const date = document.createElement('small');
+                date.className = 'text-muted';
+                date.textContent = formatDateTime(item.event_date);
+                article.append(heading, description, date);
+                eventList.append(article);
+            });
+        }
+    }
+}
+
+function initializeSettings(profile, userId, authEmail) {
+    const form = document.getElementById('settingsForm');
+    if (!form) return;
+
+    const nameInput = document.getElementById('editName');
+    const phoneInput = document.getElementById('editPhone');
+    const emailInput = document.getElementById('editEmail');
+    nameInput.value = profile.full_name || '';
+    phoneInput.value = profile.phone || '';
+    emailInput.value = authEmail || profile.school_email || '';
+    emailInput.readOnly = true;
+    setValue('editCollege', profile.college || '');
+    setValue('editBranch', profile.branch || '');
+    setValue('editYear', profile.study_year ? getYearText(profile.study_year) : '');
+
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const feedback = document.getElementById('settingsSuccess');
+        clearFormMessage(feedback);
+        const newPassword = document.getElementById('editPassword').value;
+        if (newPassword && newPassword.length < 8) {
+            showFormMessage(feedback, 'Use a password with at least 8 characters.', 'danger');
+            return;
+        }
+
+        setSubmitState(form, true, 'Saving…');
+        const { data: updatedProfile, error: profileError } = await supabase
+            .from('student_profiles')
+            .update({
+                full_name: nameInput.value.trim(),
+                phone: phoneInput.value.trim() || null
+            })
+            .eq('user_id', userId)
+            .select('full_name, phone')
+            .single();
+
+        if (profileError) {
+            setSubmitState(form, false);
+            showFormMessage(feedback, 'Your profile changes could not be saved. Please try again.', 'danger');
+            return;
+        }
+
+        if (newPassword) {
+            const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
+            if (passwordError) {
+                setSubmitState(form, false);
+                setText('welcomeMessage', `Welcome, ${updatedProfile.full_name}`);
+                showFormMessage(feedback, 'Your profile was saved, but your password could not be changed. Please try again.', 'danger');
+                return;
             }
+            document.getElementById('editPassword').value = '';
+        }
+
+        profile.full_name = updatedProfile.full_name;
+        profile.phone = updatedProfile.phone;
+        setText('welcomeMessage', `Welcome, ${profile.full_name}`);
+        setText('profileName', profile.full_name);
+        setText('profilePhone', profile.phone);
+        setText('settingsProfileName', profile.full_name);
+        setSubmitState(form, false);
+        showFormMessage(feedback, 'Your profile changes have been saved.', 'success');
+    });
+}
+
+function initializeLogout() {
+    document.querySelectorAll('#logoutBtn').forEach((button) => {
+        button.addEventListener('click', async (event) => {
+            event.preventDefault();
+            await supabase.auth.signOut();
+            window.location.assign('index.html');
+        });
+    });
+}
+
+function setActiveNavigation() {
+    const currentPage = window.location.pathname.split('/').pop().toLowerCase() || 'index.html';
+    document.querySelectorAll('.navbar-nav .nav-link[href]').forEach((link) => {
+        const targetPage = new URL(link.href, window.location.href).pathname.split('/').pop().toLowerCase();
+        if (targetPage === currentPage) {
+            link.classList.add('active');
+            link.setAttribute('aria-current', 'page');
+            link.closest('.dropdown')?.querySelector('.dropdown-toggle')?.classList.add('active');
+        } else {
+            link.classList.remove('active');
+            link.removeAttribute('aria-current');
         }
     });
 }
 
-// Helper function to format date
-function formatDate(dateString) {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+function groupBy(items, keySelector) {
+    return items.reduce((groups, item) => {
+        const key = keySelector(item);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(item);
+        return groups;
+    }, new Map());
 }
 
-// Helper function to get year text
+function normalizeSubject(subject) {
+    const value = String(subject || '').trim().toLowerCase();
+    if (value === 'math' || value === 'maths' || value === 'mathematics') return 'mathematics';
+    return value;
+}
+
+function renderTableRows(tbody, rows, addPercent) {
+    tbody.replaceChildren(...rows.map((rowData) => {
+        const row = document.createElement('tr');
+        rowData.forEach((value, index) => {
+            const cell = document.createElement('td');
+            cell.textContent = value === null || value === undefined
+                ? '—'
+                : (addPercent && index > 0 && value !== '—' ? `${value}%` : String(value));
+            if (index === 0) cell.classList.add('fw-semibold');
+            row.append(cell);
+        });
+        return row;
+    }));
+}
+
+function showTableEmpty(tbody, columns, message) {
+    const row = document.createElement('tr');
+    const cell = document.createElement('td');
+    cell.colSpan = columns;
+    cell.className = 'text-center text-muted py-4';
+    cell.textContent = message;
+    row.append(cell);
+    tbody.replaceChildren(row);
+}
+
+function addEmptyState(parent, message) {
+    const paragraph = document.createElement('p');
+    paragraph.className = 'empty-state text-muted text-center py-4 mb-0';
+    paragraph.textContent = message;
+    parent.append(paragraph);
+}
+
+function showFormMessage(element, message, type) {
+    if (!element) return;
+    element.textContent = message;
+    element.classList.remove('d-none', 'alert-success', 'alert-danger', 'alert-warning');
+    element.classList.add(`alert-${type}`);
+    element.setAttribute('role', type === 'danger' ? 'alert' : 'status');
+}
+
+function clearFormMessage(element) {
+    if (!element) return;
+    element.textContent = '';
+    element.classList.add('d-none');
+    element.classList.remove('alert-success', 'alert-danger', 'alert-warning');
+}
+
+function showPageAlert(message, type) {
+    const container = document.querySelector('.container.my-4') || document.querySelector('main') || document.querySelector('.auth-page .card-body');
+    if (!container) return;
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} mb-4`;
+    alert.setAttribute('role', 'alert');
+    alert.textContent = message;
+    container.prepend(alert);
+}
+
+function setSubmitState(form, isLoading, loadingLabel = 'Please wait…') {
+    const button = form.querySelector('button[type="submit"]');
+    if (!button) return;
+    if (isLoading) {
+        button.dataset.originalLabel = button.textContent.trim();
+        button.disabled = true;
+        button.textContent = loadingLabel;
+    } else {
+        button.disabled = false;
+        button.textContent = button.dataset.originalLabel || 'Submit';
+    }
+}
+
+function setText(id, value) {
+    const element = document.getElementById(id);
+    if (element) element.textContent = value || 'Not provided';
+}
+
+function setValue(id, value) {
+    const element = document.getElementById(id);
+    if (element) element.value = value || '';
+}
+
+function formatDate(dateString) {
+    const date = new Date(`${dateString}T00:00:00`);
+    if (Number.isNaN(date.getTime())) return 'Not provided';
+    return new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'long', day: 'numeric' }).format(date);
+}
+
+function formatDateTime(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+}
+
+function formatMonth(monthKey) {
+    const date = new Date(`${monthKey}-01T00:00:00`);
+    return Number.isNaN(date.getTime()) ? monthKey : new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(date);
+}
+
+function formatTime(value) {
+    const date = new Date(`1970-01-01T${value}`);
+    return Number.isNaN(date.getTime()) ? String(value).slice(0, 5) : new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(date);
+}
+
+function formatScore(value) {
+    const numeric = Number(value);
+    return Number.isInteger(numeric) ? String(numeric) : numeric.toFixed(1);
+}
+
 function getYearText(year) {
-    const yearMap = {
-        '1': '1st Year',
-        '2': '2nd Year',
-        '3': '3rd Year',
-        '4': '4th Year'
-    };
+    const yearMap = { 1: '1st Year', 2: '2nd Year', 3: '3rd Year', 4: '4th Year' };
     return yearMap[year] || `${year} Year`;
 }
-
-// Helper function to generate random number
-function getRandomNumber(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-} 

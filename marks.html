@@ -23,7 +23,10 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto">
+                                        <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="dashboard.html"><i class="bi bi-grid-1x2-fill me-1"></i>Overview</a>
+                        </li>
                         <li class="nav-item">
                             <a class="nav-link" href="profile.html">
                                 <i class="bi bi-person-circle me-1"></i> Profile
@@ -67,13 +70,13 @@
                     <div class="row align-items-center">
                         <div class="col-md-8">
                             <h2 class="fw-bold" id="welcomeMessage">Welcome, Student</h2>
-                            <p class="text-muted mb-0">Student ID: <span id="dashboardStudentId">23471A05D3</span></p>
+                            <p class="text-muted mb-0">Student ID: <span id="dashboardStudentId">—</span></p>
                         </div>
                         <div class="col-md-4 text-md-end mt-3 mt-md-0">
                             <div class="d-flex align-items-center justify-content-md-end">
                                 <div class="text-end me-3">
                                     <p class="mb-0 text-muted">Academic Year</p>
-                                    <p class="mb-0 fw-semibold">2023-2024</p>
+                                    <p class="mb-0 fw-semibold">Not configured</p>
                                 </div>
                                 <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
                                     <i class="bi bi-mortarboard-fill" style="font-size: 1.5rem;"></i>
@@ -91,46 +94,14 @@
                         <h4 class="mb-0"><i class="bi bi-graph-up text-primary me-2"></i>Academic Performance</h4>
                     </div>
                     <div class="card-body p-4">
-                        <div class="row">
+                        <div class="row g-4 align-items-stretch">
                             <div class="col-lg-8">
-                                <canvas id="marksChart" width="400" height="200"></canvas>
+                                <div class="chart-panel"><canvas id="marksChart" width="400" height="200"></canvas></div>
                             </div>
                             <div class="col-lg-4">
-                                <div class="card mt-4 mt-lg-0 h-100 border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h5 class="card-title mb-4">Subject Marks</h5>
-                                        <div class="mb-3">
-                                            <div class="d-flex justify-content-between mb-1">
-                                                <span>English</span>
-                                                <span class="fw-semibold" id="englishMarks">82</span>
-                                            </div>
-                                            <div class="progress" style="height: 8px;">
-                                                <div class="progress-bar bg-info" id="englishMarksProgress" style="width: 82%;" aria-valuenow="82" aria-valuemin="0" aria-valuemax="100"></div>
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <div class="d-flex justify-content-between mb-1">
-                                                <span>Mathematics</span>
-                                                <span class="fw-semibold" id="mathsMarks">75</span>
-                                            </div>
-                                            <div class="progress" style="height: 8px;">
-                                                <div class="progress-bar bg-warning" id="mathsMarksProgress" style="width: 75%;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <div class="d-flex justify-content-between mb-1">
-                                                <span>Science</span>
-                                                <span class="fw-semibold" id="scienceMarks">91</span>
-                                            </div>
-                                            <div class="progress" style="height: 8px;">
-                                                <div class="progress-bar bg-success" id="scienceMarksProgress" style="width: 91%;" aria-valuenow="91" aria-valuemin="0" aria-valuemax="100"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div id="marksSubjectCards" class="row g-3"></div>
                             </div>
                         </div>
-                        
                         <!-- Semester Performance (Added section) -->
                         <div class="mt-5">
                             <h5 class="mb-3">Semester Performance</h5>
@@ -156,32 +127,7 @@
                                                     <th>Grade</th>
                                                 </tr>
                                             </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td>English</td>
-                                                    <td>25/30</td>
-                                                    <td>18/20</td>
-                                                    <td>39/50</td>
-                                                    <td>82/100</td>
-                                                    <td><span class="badge bg-success">A</span></td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Mathematics</td>
-                                                    <td>23/30</td>
-                                                    <td>16/20</td>
-                                                    <td>36/50</td>
-                                                    <td>75/100</td>
-                                                    <td><span class="badge bg-success">B+</span></td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Science</td>
-                                                    <td>27/30</td>
-                                                    <td>19/20</td>
-                                                    <td>45/50</td>
-                                                    <td>91/100</td>
-                                                    <td><span class="badge bg-success">A+</span></td>
-                                                </tr>
-                                            </tbody>
+                                            <tbody id="semester1Rows"><tr><td colspan="6" class="text-center text-muted py-4">Detailed semester results will appear here when your school publishes them.</td></tr></tbody>
                                         </table>
                                     </div>
                                 </div>
@@ -198,32 +144,7 @@
                                                     <th>Grade</th>
                                                 </tr>
                                             </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td>English</td>
-                                                    <td>26/30</td>
-                                                    <td>17/20</td>
-                                                    <td>41/50</td>
-                                                    <td>84/100</td>
-                                                    <td><span class="badge bg-success">A</span></td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Mathematics</td>
-                                                    <td>24/30</td>
-                                                    <td>17/20</td>
-                                                    <td>38/50</td>
-                                                    <td>79/100</td>
-                                                    <td><span class="badge bg-success">B+</span></td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Science</td>
-                                                    <td>28/30</td>
-                                                    <td>18/20</td>
-                                                    <td>47/50</td>
-                                                    <td>93/100</td>
-                                                    <td><span class="badge bg-success">A+</span></td>
-                                                </tr>
-                                            </tbody>
+                                            <tbody id="semester2Rows"><tr><td colspan="6" class="text-center text-muted py-4">Detailed semester results will appear here when your school publishes them.</td></tr></tbody>
                                         </table>
                                     </div>
                                 </div>
@@ -238,7 +159,7 @@
         <footer class="bg-light py-3 mt-auto">
             <div class="container">
                 <div class="text-center">
-                    <p class="mb-0">&copy; 2024 Student Management System. All rights reserved.</p>
+                    <p class="mb-0">&copy; <span data-current-year></span> Student Portal.</p>
                 </div>
             </div>
         </footer>
@@ -248,6 +169,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
-</html> 
+</html>
