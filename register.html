@@ -41,7 +41,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
                                     <input type="password" class="form-control" id="regPassword" placeholder="Create a password" autocomplete="new-password" minlength="8" required>
-                                    <button class="btn btn-outline-secondary" type="button" id="toggleRegPassword" aria-label="Show password"><i class="bi bi-eye"></i></button>
+                                    <button class="btn btn-outline-secondary" type="button" data-password-toggle aria-controls="regPassword" aria-label="Show password" aria-pressed="false"><i class="bi bi-eye"></i></button>
                                 </div>
                                 <div class="form-text">Use at least 8 characters.</div>
                             </div>
@@ -65,6 +65,7 @@
             </div>
         </div>
     </div>
+    <script src="password-toggle.js"></script>
     <script type="module" src="script.js"></script>
 </body>
 </html>

@@ -79,10 +79,8 @@ function showConfigurationNotice(loginForm, registrationForm, protectedPage) {
 function initializeLogin(form) {
     const emailInput = document.getElementById('loginEmail');
     const passwordInput = document.getElementById('password');
-    const togglePassword = document.getElementById('togglePassword');
     const feedback = document.getElementById('loginError');
 
-    setupPasswordToggle(togglePassword, passwordInput);
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         clearFormMessage(feedback);
@@ -149,8 +147,6 @@ function initializeRegistration(form) {
     const passwordInput = document.getElementById('regPassword');
     const confirmPasswordInput = document.getElementById('confirmPassword');
     const feedback = document.getElementById('registrationFeedback');
-    setupPasswordToggle(document.getElementById('toggleRegPassword'), passwordInput);
-
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         clearFormMessage(feedback);
@@ -202,18 +198,6 @@ function initializeRegistration(form) {
         }
     });
 }
-function setupPasswordToggle(button, input) {
-    if (!button || !input) return;
-    button.addEventListener('click', () => {
-        const reveal = input.type === 'password';
-        input.type = reveal ? 'text' : 'password';
-        button.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
-        const icon = button.querySelector('i');
-        if (icon) icon.classList.toggle('bi-eye-slash', reveal);
-        if (icon) icon.classList.toggle('bi-eye', !reveal);
-    });
-}
-
 async function initializePortalPage() {
     const { data, error } = await supabase.auth.getSession();
     if (error || !data.session) {

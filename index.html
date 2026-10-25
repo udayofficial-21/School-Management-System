@@ -35,7 +35,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
                                     <input type="password" class="form-control" id="password" placeholder="Enter your password" autocomplete="current-password" required>
-                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword" aria-label="Show password">
+                                    <button class="btn btn-outline-secondary" type="button" data-password-toggle aria-controls="password" aria-label="Show password" aria-pressed="false">
                                         <i class="bi bi-eye"></i>
                                     </button>
                                 </div>
@@ -59,6 +59,7 @@
 
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+    <script src="password-toggle.js"></script>
     <script type="module" src="script.js"></script>
 </body>
 
