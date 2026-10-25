@@ -32,8 +32,8 @@ The separate roll number is allocated from the school format. The default templa
 There is no public Admin sign-up. This prevents students from giving themselves staff permissions.
 
 1. Open supabase/bootstrap-admin.sql and replace REPLACE_WITH_ADMIN_EMAIL with the first Super Admin's email address.
-2. Run that edited file in the Supabase SQL Editor.
-3. In Supabase Authentication → Users, choose Add user and send an invitation to the same email address.
+2. Run that edited file in the Supabase SQL Editor. If the email already has a confirmed account, the role is assigned immediately.
+3. If it is a new or unconfirmed account, open Supabase Authentication → Users and send an invitation to that same email.
 4. The person opens the invitation email and finishes account setup. The database then assigns the Super Admin role.
 5. Sign in through the same website login page. The Super Admin workspace opens automatically.
 

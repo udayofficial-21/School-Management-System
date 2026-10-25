@@ -40,9 +40,9 @@ The first staff role must be created by the Supabase project owner. The website 
 1. Open D:/School-Management-System/supabase/bootstrap-admin.sql.
 2. Replace REPLACE_WITH_ADMIN_EMAIL with the first Super Admin's actual email address. Keep the single quotes.
 3. Copy the edited file into a new Supabase SQL Editor query and click Run.
-4. In the Supabase left menu, choose Authentication → Users.
+4. If this email does not already have a confirmed Supabase account, choose Authentication → Users.
 5. Click Add user and choose the option to send an invitation. Use the same email address.
-6. The Super Admin opens the email, accepts the invitation, and sets up the account.
+6. The Super Admin opens the email, accepts the invitation, and sets up the account. If the account was already confirmed, the role is ready immediately.
 7. They can now sign in from the regular website login page. The Admin workspace opens automatically.
 
 If email invitations are not arriving, Supabase's default email sender may be limited. Set up an approved SMTP sender in Authentication → Emails before inviting real users.
