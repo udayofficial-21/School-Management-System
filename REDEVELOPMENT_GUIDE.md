@@ -4,7 +4,7 @@
 
 This is a static website hosted on GitHub Pages, using Supabase for sign-in and its database.
 
-The public [interactive demo](https://udayofficial-21.github.io/School-Management-System/demo.html) has separate Student and Principal/Admin sample sign-ins. Its fictional credentials and records are for the demo only; demo sign-in does not connect to Supabase, and demo sessions do not change real records.
+The public [interactive demo](https://udayofficial-21.github.io/School-Management-System/demo.html) has separate Student and Principal/Admin sample sign-ins. Admin users can add a fictional student and allocate a sample roll during the session; signing out resets these temporary changes. The demo never connects to Supabase or changes real records.
 
 - Student demo: `student.demo@example.com` / `StudentDemo2026!`
 - Principal/Admin demo: `principal.demo@example.com` / `AdminDemo2026!`

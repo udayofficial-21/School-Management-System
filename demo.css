@@ -45,6 +45,22 @@
 .demo-login-form .btn { min-height: 42px; margin-top: .3rem; border-radius: 9px; font-size: .75rem; font-weight: 750; }
 .demo-login-error { margin: .2rem 0 0; color: #b64646; font-size: .65rem; }
 .demo-login-foot { margin: .25rem 0 0; color: #919dad; font-size: .57rem; text-align: center; }
+.demo-dialog { width: min(540px,calc(100% - 2rem)); max-width: none; max-height: calc(100% - 2rem); padding: 0; overflow: auto; border: 1px solid #e0e7f0; border-radius: 18px; background: white; box-shadow: 0 30px 100px rgba(13,30,53,.28); color: #17243a; }
+.demo-dialog::backdrop { background: rgba(13,30,53,.58); backdrop-filter: blur(3px); }
+.demo-dialog-form { display: grid; gap: .5rem; padding: clamp(1rem,4vw,1.5rem); }
+.demo-dialog-heading { display: flex; align-items: center; gap: .7rem; margin-bottom: .3rem; }
+.demo-dialog-heading h2 { margin: 0; color: #1b304a; font-size: 1.08rem; font-weight: 800; letter-spacing: -.035em; }
+.demo-dialog-close { width: 32px; height: 32px; margin-left: auto; border: 0; border-radius: 9px; background: #f2f5f8; color: #61738a; font-size: 1.25rem; line-height: 1; }
+.demo-dialog-intro { margin: 0 0 .35rem; color: #8794a4; font-size: .67rem; }
+.demo-dialog-form label { margin-top: .25rem; color: #50637a; font-size: .64rem; font-weight: 750; }
+.demo-dialog-form .form-control, .demo-dialog-form .form-select { min-height: 39px; border-color: #e1e7ef; border-radius: 9px; font-size: .7rem; }
+.demo-dialog-fields { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .55rem; }
+.demo-dialog-fields > div { display: grid; align-content: start; gap: .4rem; }
+.demo-id-preview { display: flex; align-items: center; justify-content: space-between; gap: .5rem; margin: .35rem 0 0; padding: .6rem .7rem; border: 1px solid #e6ecf4; border-radius: 9px; background: #f8fafd; color: #78889b; font-size: .63rem; }
+.demo-id-preview strong { color: #2d527b; font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size: .7rem; }
+.demo-dialog-actions { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .35rem; }
+.demo-dialog-actions .btn { min-height: 37px; padding: .4rem .75rem; border-radius: 8px; font-size: .67rem; font-weight: 750; }
+.demo-pending-cell { color: #aa741c !important; font-style: italic; }
 .demo-intro { max-width: 820px; margin: 0 auto 1.6rem; text-align: center; }
 .demo-eyebrow { color: #74859b; font-size: .65rem; font-weight: 850; letter-spacing: .14em; }
 .demo-intro .demo-eyebrow { color: #3372ca; }
@@ -217,6 +233,8 @@
     .demo-login-story .demo-safety-note { text-align: left; }
     .demo-login-features { justify-items: start; width: fit-content; margin: 1rem auto 0; text-align: left; }
     .demo-login-panel { padding: 1rem; border-radius: 16px; }
+    .demo-dialog-fields { grid-template-columns: 1fr 1fr; }
+    .demo-dialog-fields > div:first-child { grid-column: 1 / -1; }
     .demo-view-switch { gap: .45rem; }
     .demo-view-button { gap: .5rem; padding: .65rem .55rem; border-radius: 12px; }
     .demo-view-icon { width: 32px; height: 32px; flex-basis: 32px; font-size: .85rem; }
