@@ -20,20 +20,62 @@
         </a>
         <div class="demo-top-actions">
             <span class="demo-environment"><span></span> Demo environment</span>
-            <a class="btn btn-light btn-sm" href="index.html"><i class="bi bi-box-arrow-in-right me-1"></i>Sign in</a>
+            <span class="demo-session-badge" id="demoSessionBadge" hidden></span>
+            <button class="btn btn-outline-light btn-sm" id="demoSignOut" type="button" hidden><i class="bi bi-box-arrow-left me-1"></i>Sign out</button>
+            <a class="btn btn-light btn-sm" href="index.html"><i class="bi bi-box-arrow-in-right me-1"></i>Real portal</a>
         </div>
     </div>
 </header>
 
-<main class="demo-container demo-main">
+<main class="demo-container demo-main demo-login-screen" id="demoLoginScreen">
+    <section class="demo-login-layout">
+        <div class="demo-login-story">
+            <p class="demo-eyebrow"><i class="bi bi-stars me-1"></i> INTERACTIVE DEMO</p>
+            <h1>Step inside.<br><span>Explore every role.</span></h1>
+            <p class="demo-lead">Sign in with a sample account to experience the Student portal or the Principal administration workspace.</p>
+            <div class="demo-safety-note"><i class="bi bi-shield-check"></i><span><strong>Separate demo environment.</strong> These accounts are fictional. Demo sign-in never contacts Supabase or changes real student, staff, or college data.</span></div>
+            <div class="demo-login-features">
+                <span><i class="bi bi-check-circle-fill"></i> Realistic sample dashboards</span>
+                <span><i class="bi bi-check-circle-fill"></i> Role-based admin preview</span>
+                <span><i class="bi bi-check-circle-fill"></i> Safe to explore, no real records</span>
+            </div>
+        </div>
+        <div class="demo-login-panel">
+            <div class="demo-login-heading"><span class="demo-view-icon admin-icon"><i class="bi bi-shield-lock-fill"></i></span><div><p class="demo-eyebrow mb-1">WELCOME TO THE DEMO</p><h2>Demo sign in</h2><p>Choose an account or enter its sample credentials.</p></div></div>
+            <div class="demo-account-choices" aria-label="Sample accounts">
+                <button class="demo-account-card" type="button" data-demo-account="student">
+                    <span class="demo-account-icon student-icon"><i class="bi bi-person-badge-fill"></i></span>
+                    <span class="demo-account-details"><strong>Student portal</strong><small>Attendance, results, and timetable</small><span class="demo-credential"><i class="bi bi-envelope"></i> student.demo@example.com</span><span class="demo-credential"><i class="bi bi-key"></i> StudentDemo2026!</span></span>
+                    <i class="bi bi-arrow-down-left-circle demo-account-arrow"></i>
+                </button>
+                <button class="demo-account-card" type="button" data-demo-account="admin">
+                    <span class="demo-account-icon admin-icon"><i class="bi bi-grid-1x2-fill"></i></span>
+                    <span class="demo-account-details"><strong>Principal / Admin</strong><small>Student records and staff roles</small><span class="demo-credential"><i class="bi bi-envelope"></i> principal.demo@example.com</span><span class="demo-credential"><i class="bi bi-key"></i> AdminDemo2026!</span></span>
+                    <i class="bi bi-arrow-down-left-circle demo-account-arrow"></i>
+                </button>
+            </div>
+            <form class="demo-login-form" id="demoLoginForm" novalidate>
+                <label for="demoEmail">Demo email</label>
+                <input class="form-control" type="email" id="demoEmail" name="email" autocomplete="off" placeholder="name@example.com" required>
+                <label for="demoPassword">Demo password</label>
+                <input class="form-control" type="password" id="demoPassword" name="password" autocomplete="off" placeholder="Enter the sample password" required>
+                <p class="demo-login-error" id="demoLoginMessage" role="alert" hidden></p>
+                <button class="btn btn-primary w-100" type="submit"><i class="bi bi-box-arrow-in-right me-1"></i>Sign in to the demo</button>
+                <p class="demo-login-foot"><i class="bi bi-info-circle me-1"></i>Demo credentials are public examples. Do not use a real password here.</p>
+            </form>
+        </div>
+    </section>
+</main>
+
+<main class="demo-container demo-main demo-experience" id="demoExperience" hidden>
     <section class="demo-intro">
         <p class="demo-eyebrow"><i class="bi bi-stars me-1"></i> INTERACTIVE PREVIEW</p>
         <h1>One college.<br><span>Clear views for every role.</span></h1>
-        <p class="demo-lead">Explore the student portal and administration workspace using fictional sample records. Switch between views and try the role selector.</p>
+        <p class="demo-lead" id="demoWorkspaceIntro">You’re signed in to a sample account. Admin users can preview role permissions; sign out to explore the other demo account.</p>
         <div class="demo-safety-note"><i class="bi bi-shield-check"></i><span><strong>Demo only.</strong> Nothing here connects to Supabase or changes real student, staff, or college data.</span></div>
     </section>
 
-    <section class="demo-view-switch" aria-label="Choose a demo workspace" role="tablist">
+    <section class="demo-view-switch" id="demoViewSwitch" aria-label="Choose a demo workspace" role="tablist">
         <button class="demo-view-button active" id="studentViewTab" type="button" role="tab" aria-selected="true" aria-controls="studentDemo" data-demo-tab="student">
             <span class="demo-view-icon student-icon"><i class="bi bi-person-badge-fill"></i></span>
             <span><strong>Student portal</strong><small>Attendance, results, and schedule</small></span>
@@ -154,7 +196,7 @@
         <a class="btn btn-primary" href="index.html">Go to secure sign in <i class="bi bi-arrow-right ms-1"></i></a>
     </section>
 </main>
-<footer class="demo-footer"><div class="demo-container d-flex flex-wrap justify-content-between gap-2"><span>School Management System</span><span>Interactive demo · fictional records · no sign-in required</span></div></footer>
+<footer class="demo-footer"><div class="demo-container d-flex flex-wrap justify-content-between gap-2"><span>School Management System</span><span>Interactive demo · fictional records · demo sign-in only</span></div></footer>
 <script src="demo.js"></script>
 </body>
 </html>

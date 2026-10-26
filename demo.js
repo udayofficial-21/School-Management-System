@@ -6,6 +6,11 @@ const demoStudents = [
     { name: 'Dev Example', id: '2023ME042', roll: '23A05ME0042', branch: 'ME', access: 'Linked' }
 ];
 
+const demoAccounts = [
+    { email: 'student.demo@example.com', password: 'StudentDemo2026!', name: 'Student', workspace: 'student' },
+    { email: 'principal.demo@example.com', password: 'AdminDemo2026!', name: 'Principal / Admin', workspace: 'admin' }
+];
+
 const adminRoleProfiles = {
     super_admin: {
         name: 'Super Admin',
@@ -101,9 +106,24 @@ const adminRoleProfiles = {
 };
 
 let currentDemoRole = 'principal';
+let currentDemoUser = null;
 let toastTimer = null;
 
 document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-demo-account]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const account = demoAccounts.find((item) => item.workspace === button.dataset.demoAccount);
+            if (!account) return;
+            document.getElementById('demoEmail').value = account.email;
+            document.getElementById('demoPassword').value = account.password;
+            document.getElementById('demoLoginMessage').hidden = true;
+            document.getElementById('demoPassword').focus();
+        });
+    });
+
+    document.getElementById('demoLoginForm')?.addEventListener('submit', signInToDemo);
+    document.getElementById('demoSignOut')?.addEventListener('click', signOutOfDemo);
+
     document.querySelectorAll('[data-demo-tab]').forEach((button) => {
         button.addEventListener('click', () => setDemoView(button.dataset.demoTab));
     });
@@ -141,7 +161,51 @@ document.addEventListener('DOMContentLoaded', () => {
     renderAdminDemo();
 });
 
+function signInToDemo(event) {
+    event.preventDefault();
+    const email = document.getElementById('demoEmail').value.trim().toLowerCase();
+    const password = document.getElementById('demoPassword').value;
+    const account = demoAccounts.find((item) => item.email === email && item.password === password);
+    const message = document.getElementById('demoLoginMessage');
+
+    if (!account) {
+        message.textContent = 'Those demo credentials did not match. Choose a sample account above and try again.';
+        message.hidden = false;
+        return;
+    }
+
+    currentDemoUser = account;
+    document.getElementById('demoLoginScreen').hidden = true;
+    document.getElementById('demoExperience').hidden = false;
+    document.getElementById('demoViewSwitch').hidden = true;
+    document.getElementById('demoSignOut').hidden = false;
+    const badge = document.getElementById('demoSessionBadge');
+    badge.textContent = `${account.name} demo session`;
+    badge.hidden = false;
+
+    document.querySelectorAll('[data-demo-tab]').forEach((button) => {
+        button.hidden = button.dataset.demoTab !== account.workspace;
+    });
+    setDemoView(account.workspace);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function signOutOfDemo() {
+    currentDemoUser = null;
+    document.getElementById('demoExperience').hidden = true;
+    document.getElementById('demoLoginScreen').hidden = false;
+    document.getElementById('demoViewSwitch').hidden = false;
+    document.getElementById('demoSignOut').hidden = true;
+    document.getElementById('demoSessionBadge').hidden = true;
+    document.getElementById('demoLoginForm').reset();
+    document.getElementById('demoLoginMessage').hidden = true;
+    document.querySelectorAll('[data-demo-tab]').forEach((button) => { button.hidden = false; });
+    setDemoView('student');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 function setDemoView(view) {
+    if (currentDemoUser && currentDemoUser.workspace !== view) return;
     document.querySelectorAll('[data-demo-tab]').forEach((button) => {
         const active = button.dataset.demoTab === view;
         button.classList.toggle('active', active);
