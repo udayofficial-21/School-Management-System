@@ -61,7 +61,11 @@ body[data-admin-page] { min-height: 100vh; background: var(--admin-canvas); }
 .role-super { background: #eee8ff; color: #6341b8; }
 .role-leadership { background: #e9f1ff; color: #2a5fb1; }
 .role-hod { background: #e2f7f1; color: #167b64; }
+.role-registrar { background: #fff2e8; color: #a9551d; }
 .role-faculty { background: #f0f3f7; color: #566579; }
+.role-student { background: #e5f5ff; color: #17628c; }
+.delegation-check { padding: .8rem .9rem; border: 1px solid #e4eaf2; border-radius: 11px; background: #f8fafc; }
+.delegation-check .form-check-input { margin-top: .3rem; }
 
 .super-admin-settings { margin-top: .25rem; }
 .super-admin-settings .form-control { min-height: 46px; }

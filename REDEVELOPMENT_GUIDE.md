@@ -6,9 +6,12 @@ This is a static website hosted on GitHub Pages, using Supabase for sign-in and 
 
 - Students and staff use the same sign-in page. After sign-in, the assigned role opens the student portal or the staff administration workspace.
 - School staff enroll students before registration. A student account is linked only when the student enters the matching registration ID and school email and confirms that email.
-- Super Admin manages staff roles and school-wide settings.
-- Chairman, Principal, and Vice Principal can manage the school-wide roster and roll allocation.
-- HOD can manage students and rolls for the assigned branch.
+- Super Admin manages system settings and every school role.
+- Chairman receives college-wide summary reports and has no student-record editing access.
+- Principal manages school-wide student operations and may assign Vice Principal, Registrar, HOD, and Faculty roles.
+- Vice Principal manages school-wide student operations; staff-role management is available only when explicitly delegated.
+- Registrar / College Admin manages admissions, student profiles, registration IDs, and school-wide roll allocation.
+- HOD manages students and rolls for the assigned branch.
 - Faculty can read the assigned branch roster; email, phone, and date of birth are withheld from the faculty roster view.
 - The database checks each role and branch. Hiding a button in the website is not the security boundary.
 
@@ -37,7 +40,7 @@ There is no public Admin sign-up. This prevents students from giving themselves 
 4. The person opens the invitation email and finishes account setup. The database then assigns the Super Admin role.
 5. Sign in through the same website login page. The Super Admin workspace opens automatically.
 
-After the first Super Admin signs in, use Staff access to assign Chairman, Principal, Vice Principal, HOD, Faculty, or additional Super Admin roles. For a new staff email, the app prepares the role invitation; send the actual account invitation from Supabase Authentication → Users. The role activates after email confirmation.
+After the first Super Admin signs in, use Staff access to assign Chairman, Principal, Vice Principal, Registrar, HOD, Faculty, or additional Super Admin roles. The Principal can assign Vice Principal, Registrar, HOD, and Faculty roles. A Vice Principal receives staff-role controls only when the Super Admin or Principal explicitly delegates them; delegated Vice Principals can manage Registrar, HOD, and Faculty roles. For a new staff email, the app prepares the role invitation; send the actual account invitation from Supabase Authentication → Users. The role activates after email confirmation.
 
 ## School setup and daily use
 

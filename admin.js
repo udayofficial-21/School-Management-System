@@ -5,16 +5,19 @@ const ROLE_LABELS = {
     chairman: 'Chairman',
     principal: 'Principal',
     vice_principal: 'Vice Principal',
+    registrar: 'Registrar / College Admin',
     hod: 'Head of Department',
     faculty: 'Faculty'
 };
 
 const CAN_MANAGE_STUDENTS = new Set([
-    'super_admin', 'chairman', 'principal', 'vice_principal', 'hod'
+    'super_admin', 'principal', 'vice_principal', 'registrar', 'hod'
 ]);
 
 let activeRole = null;
 let activeUser = null;
+let activeBranchCode = null;
+let canManageStaffRoles = false;
 let studentRecords = [];
 let schoolSettings = null;
 let studentSearchTimer = null;
@@ -42,7 +45,7 @@ async function initializeAdmin() {
     activeUser = data.session.user;
     const { data: roleRow, error: roleError } = await supabase
         .from('user_roles')
-        .select('role_name, branch_code')
+        .select('role_name, branch_code, can_manage_staff')
         .eq('user_id', activeUser.id)
         .maybeSingle();
 
@@ -57,6 +60,7 @@ async function initializeAdmin() {
     }
 
     activeRole = roleRow.role_name;
+    activeBranchCode = roleRow.branch_code;
     document.getElementById('staffEmail')?.replaceChildren(document.createTextNode(activeUser.email || 'Staff account'));
     const roleLabel = ROLE_LABELS[activeRole] || 'School staff';
     const roleScope = ['hod', 'faculty'].includes(activeRole) && roleRow.branch_code ? ` · ${roleRow.branch_code}` : '';
@@ -65,21 +69,46 @@ async function initializeAdmin() {
 
     const isSuperAdmin = activeRole === 'super_admin';
     const canManage = CAN_MANAGE_STUDENTS.has(activeRole);
+    canManageStaffRoles = isSuperAdmin || activeRole === 'principal'
+        || (activeRole === 'vice_principal' && roleRow.can_manage_staff === true);
     document.querySelectorAll('[data-super-admin-only]').forEach((element) => {
         element.hidden = !isSuperAdmin;
     });
     document.querySelectorAll('[data-can-manage]').forEach((element) => {
         element.hidden = !canManage;
     });
+    document.querySelectorAll('[data-can-manage-staff]').forEach((element) => {
+        element.hidden = !canManageStaffRoles;
+    });
+    document.querySelectorAll('[data-student-nav]').forEach((element) => {
+        element.hidden = activeRole === 'chairman';
+    });
+    document.querySelectorAll('[data-roll-nav]').forEach((element) => {
+        element.hidden = !canManage;
+    });
+    document.querySelectorAll('[data-faculty-only]').forEach((element) => {
+        element.hidden = activeRole !== 'faculty';
+    });
+    document.querySelectorAll('[data-chairman-only]').forEach((element) => {
+        element.hidden = activeRole !== 'chairman';
+    });
     initializeLogout();
 
     const page = document.body.dataset.adminPage;
-    if (page === 'roles' && !isSuperAdmin) {
+    if (page === 'roles' && !canManageStaffRoles) {
+        window.location.replace('admin.html');
+        return;
+    }
+    if (page === 'students' && activeRole === 'chairman') {
+        window.location.replace('admin.html');
+        return;
+    }
+    if (page === 'rolls' && !canManage) {
         window.location.replace('admin.html');
         return;
     }
 
-    if (page === 'dashboard') await initializeDashboard(isSuperAdmin);
+    if (page === 'dashboard') await initializeDashboard(activeRole, isSuperAdmin);
     if (page === 'students') initializeStudentRecords(canManage);
     if (page === 'rolls') await initializeRollAllocation(canManage);
     if (page === 'roles') initializeStaffRoles();
@@ -99,7 +128,20 @@ function initializeLogout() {
     });
 }
 
-async function initializeDashboard(isSuperAdmin) {
+async function initializeDashboard(role, isSuperAdmin) {
+    const dashboardCopy = {
+        super_admin: ['System overview', 'Manage platform setup, school access, and enrollment operations.', 'You have full system access. Use staff access carefully and keep at least two trusted Super Admins.'],
+        chairman: ['Chairman overview', 'College-wide enrollment and student-access reports at a glance.', 'This view contains summary information only. Contact the Principal for student record changes.'],
+        principal: ['Principal overview', 'Coordinate student operations and staff access across the college.', 'You can manage college-wide student records and assign approved lower-level staff roles.'],
+        vice_principal: ['Vice Principal overview', 'Coordinate daily student operations and delegated staff work.', canManageStaffRoles ? 'You have delegated permission to manage Registrar, HOD, and Faculty access.' : 'You can manage college-wide student records. Staff access is managed by the Principal.'],
+        registrar: ['Registrar workspace', 'Manage admissions, student profiles, registration IDs, and roll allocation.', 'Student record changes are protected by the role and school-wide access rules.'],
+        hod: ['Department overview', 'Manage enrollment and roll allocation for your assigned department.', 'Your student access is limited to the assigned branch.'],
+        faculty: ['Faculty overview', 'Review the student roster for your assigned department.', 'Your access is read-only and limited to the assigned branch.']
+    }[role] || ['School overview', 'View current school enrollment summaries.', 'Your access is limited to the permissions assigned to your role.'];
+    setText('dashboardTitle', dashboardCopy[0]);
+    setText('dashboardSubtitle', dashboardCopy[1]);
+    setText('permissionNoteText', dashboardCopy[2]);
+
     const { data, error } = await supabase.rpc('admin_dashboard_summary');
     if (error) {
         showNotice(friendlyError(error), 'danger');
@@ -182,6 +224,19 @@ function initializeStudentRecords(canManage) {
     const form = document.getElementById('studentForm');
     const search = document.getElementById('studentSearch');
     const rows = document.getElementById('studentRows');
+    if (activeRole === 'faculty') {
+        setText('studentsPageTitle', 'Department student roster');
+        setText('studentsPageSubtitle', 'Review registration and roll status for students in your assigned branch.');
+        const branch = document.getElementById('facultyRosterNote');
+        if (branch) branch.textContent = `Read-only branch roster${activeBranchCode ? ` · ${activeBranchCode}` : ''}. Personal contact details are hidden.`;
+        if (search) search.placeholder = 'Search name, registration ID, or roll';
+    } else if (activeRole === 'hod') {
+        setText('studentsPageTitle', 'Department student records');
+        setText('studentsPageSubtitle', 'Enroll and maintain student records within your assigned branch.');
+    } else if (activeRole === 'registrar') {
+        setText('studentsPageTitle', 'Admissions and student records');
+        setText('studentsPageSubtitle', 'Maintain the approved student roster for the college.');
+    }
     if (canManage) {
         setValue('admissionYear', new Date().getFullYear());
         updateRegistrationPreview();
@@ -442,9 +497,28 @@ function initializeStaffRoles() {
     const form = document.getElementById('staffRoleForm');
     const roleSelect = document.getElementById('staffRoleSelect');
     const branchField = document.getElementById('staffBranchField');
-    roleSelect?.addEventListener('change', () => {
-        if (branchField) branchField.hidden = !['hod', 'faculty'].includes(roleSelect.value);
+    const branchInput = document.getElementById('staffBranchCode');
+    const delegationField = document.getElementById('vicePrincipalDelegation');
+    const canDelegateStaffAccess = activeRole === 'super_admin' || activeRole === 'principal';
+
+    setText('staffAccessTitle', activeRole === 'super_admin' ? 'System staff access' : 'Manage staff access');
+    setText('staffAccessDescription', activeRole === 'super_admin'
+        ? 'Assign school leadership and staff roles. Keep system ownership limited to trusted Super Admins.'
+        : activeRole === 'principal'
+            ? 'Manage Vice Principal, Registrar, HOD, and Faculty roles. Super Admin access remains protected.'
+            : 'Manage Registrar, HOD, and Faculty roles within the authority delegated by the Principal.');
+
+    roleSelect?.querySelectorAll('option[data-assignable-by]').forEach((option) => {
+        option.hidden = !option.dataset.assignableBy.split(',').includes(activeRole);
     });
+    const updateRoleFields = () => {
+        const branchRequired = ['hod', 'faculty'].includes(roleSelect?.value);
+        if (branchField) branchField.hidden = !branchRequired;
+        if (branchInput) branchInput.required = branchRequired;
+        if (delegationField) delegationField.hidden = !(canDelegateStaffAccess && roleSelect?.value === 'vice_principal');
+    };
+    roleSelect?.addEventListener('change', updateRoleFields);
+    updateRoleFields();
     form?.addEventListener('submit', submitStaffRole);
     document.getElementById('staffRows')?.addEventListener('click', removeStaffRole);
     document.getElementById('pendingStaffRows')?.addEventListener('click', cancelStaffInvite);
@@ -468,7 +542,7 @@ async function loadStaffRoles() {
     if (activeBody) {
         activeBody.innerHTML = staff.length ? staff.map((member) => `
             <tr><td class="student-cell"><strong>${escapeHtml(member.display_name || member.email)}</strong><small>${escapeHtml(member.email)}</small></td>
-            <td><span class="role-pill ${roleClass(member.role_name)}">${escapeHtml(ROLE_LABELS[member.role_name] || member.role_name)}</span></td>
+            <td><span class="role-pill ${roleClass(member.role_name)}">${escapeHtml(ROLE_LABELS[member.role_name] || member.role_name)}</span>${member.can_manage_staff ? '<small class="d-block text-muted mt-1">Staff access delegated</small>' : ''}</td>
             <td>${escapeHtml(member.branch_code || 'All school')}</td>
             <td>${escapeHtml(formatDate(member.assigned_at))}</td>
             <td><button type="button" class="btn btn-outline-danger" data-remove-role="${escapeHtml(member.user_id)}" data-member-name="${escapeHtml(member.display_name || member.email)}"><i class="bi bi-person-dash me-1"></i>Remove role</button></td></tr>`).join('')
@@ -476,7 +550,7 @@ async function loadStaffRoles() {
     }
     if (pendingBody) {
         pendingBody.innerHTML = pending.length ? pending.map((invite) => `
-            <tr><td>${escapeHtml(invite.email)}</td><td><span class="role-pill ${roleClass(invite.role_name)}">${escapeHtml(ROLE_LABELS[invite.role_name] || invite.role_name)}</span></td>
+            <tr><td>${escapeHtml(invite.email)}</td><td><span class="role-pill ${roleClass(invite.role_name)}">${escapeHtml(ROLE_LABELS[invite.role_name] || invite.role_name)}</span>${invite.can_manage_staff ? '<small class="d-block text-muted mt-1">Staff access delegated</small>' : ''}</td>
             <td>${escapeHtml(invite.branch_code || 'All school')}</td><td>${escapeHtml(formatDate(invite.created_at))}</td>
             <td><button type="button" class="btn btn-light" data-cancel-invite="${escapeHtml(invite.email)}"><i class="bi bi-x-circle me-1"></i>Cancel</button></td></tr>`).join('')
             : '<tr><td colspan="5" class="text-center text-muted py-4">No pending invitations.</td></tr>';
@@ -485,15 +559,18 @@ async function loadStaffRoles() {
 
 async function submitStaffRole(event) {
     event.preventDefault();
+    const form = event.currentTarget;
     const email = document.getElementById('staffTargetEmail').value.trim().toLowerCase();
     const role = document.getElementById('staffRoleSelect').value;
     const branch = document.getElementById('staffBranchCode').value.trim().toUpperCase() || null;
+    const canManageStaff = role === 'vice_principal' && document.getElementById('canManageStaff').checked;
     const button = document.getElementById('saveStaffRole');
     setButtonBusy(button, true, 'Saving…');
     const { data, error } = await supabase.rpc('admin_manage_staff', {
         p_email: email,
         p_role_name: role,
-        p_branch_code: branch
+        p_branch_code: branch,
+        p_can_manage_staff: canManageStaff
     });
     setButtonBusy(button, false);
     if (error) {
@@ -501,13 +578,16 @@ async function submitStaffRole(event) {
         return;
     }
     const result = Array.isArray(data) ? data[0] : data;
+    const delegation = canManageStaff ? ' with delegated staff access' : '';
     if (result === 'invite_pending') {
-        showNotice(`Role invitation prepared for ${email}. Send or resend the invite from Supabase Authentication → Users; the role activates after the person confirms their email.`, 'success');
+        showNotice(`Role invitation prepared for ${email}${delegation}. Send or resend the invite from Supabase Authentication → Users; the role activates after the person confirms their email.`, 'success');
     } else {
-        showNotice(`The ${ROLE_LABELS[role]} role is active for ${email}.`, 'success');
+        showNotice(`The ${ROLE_LABELS[role]} role${delegation} is active for ${email}.`, 'success');
     }
-    event.currentTarget.reset();
+    form.reset();
     document.getElementById('staffBranchField').hidden = true;
+    document.getElementById('staffBranchCode').required = false;
+    document.getElementById('vicePrincipalDelegation').hidden = true;
     await loadStaffRoles();
 }
 
@@ -543,6 +623,7 @@ async function cancelStaffInvite(event) {
 function roleClass(role) {
     if (role === 'super_admin') return 'role-super';
     if (['chairman', 'principal', 'vice_principal'].includes(role)) return 'role-leadership';
+    if (role === 'registrar') return 'role-registrar';
     if (role === 'hod') return 'role-hod';
     return 'role-faculty';
 }

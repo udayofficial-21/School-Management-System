@@ -60,15 +60,18 @@ For example, year 2023, college code A05, branch code CSE, and first sequence nu
 
 ## Step 5: Add staff roles
 
-1. Open Staff access from the Admin navigation.
-2. Enter the staff member's email, choose a role, and enter a branch code for HOD or Faculty.
-3. If the staff user already has a confirmed Supabase account, their role is assigned immediately.
-4. If they do not have an account yet, the portal prepares a role invitation. Go to Supabase Authentication → Users and send an invitation to that same email.
-5. After they confirm their email, the role becomes active.
+1. The Super Admin opens Staff access to assign the first Principal and other leadership roles.
+2. The Principal can then assign Vice Principal, Registrar / College Admin, HOD, and Faculty roles.
+3. The Super Admin or Principal can optionally delegate staff-role management to a Vice Principal. That Vice Principal can then assign only Registrar, HOD, and Faculty roles.
+4. Enter the staff member's email. Enter a branch code for HOD or Faculty; Registrar access is school-wide.
+5. A confirmed Supabase account receives its role immediately. For a new account, the portal prepares an invitation; send the account invitation from Supabase Authentication → Users. The role activates after the person confirms their email.
 
 Role guide:
-- Super Admin: all settings and staff access.
-- Chairman, Principal, Vice Principal: school-wide student roster and roll management.
+- Super Admin: system settings and all roles.
+- Chairman: college-wide summary reports; no student editing.
+- Principal: school-wide student operations and designated staff roles.
+- Vice Principal: school-wide student operations; staff-role tools only when delegated.
+- Registrar / College Admin: admissions, student records, registration IDs, and roll allocation.
 - HOD: student and roll management for the assigned branch.
 - Faculty: read-only roster for the assigned branch.
 

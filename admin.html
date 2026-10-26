@@ -18,9 +18,9 @@
         <div class="collapse navbar-collapse" id="adminNav">
             <ul class="navbar-nav ms-lg-4 me-auto">
                 <li class="nav-item"><a class="nav-link active" href="admin.html"><i class="bi bi-grid-1x2-fill me-1"></i>Overview</a></li>
-                <li class="nav-item"><a class="nav-link" href="admin-students.html"><i class="bi bi-people me-1"></i>Students</a></li>
-                <li class="nav-item"><a class="nav-link" href="roll-allocation.html"><i class="bi bi-upc-scan me-1"></i>Roll allocation</a></li>
-                <li class="nav-item" data-super-admin-only hidden><a class="nav-link" href="admin-roles.html"><i class="bi bi-shield-lock me-1"></i>Staff access</a></li>
+                <li class="nav-item" data-student-nav><a class="nav-link" href="admin-students.html"><i class="bi bi-people me-1"></i>Students</a></li>
+                <li class="nav-item" data-roll-nav><a class="nav-link" href="roll-allocation.html"><i class="bi bi-upc-scan me-1"></i>Roll allocation</a></li>
+                <li class="nav-item" data-can-manage-staff hidden><a class="nav-link" href="admin-roles.html"><i class="bi bi-shield-lock me-1"></i>Staff access</a></li>
             </ul>
             <div class="admin-account d-flex align-items-center gap-3 mt-3 mt-lg-0">
                 <div class="text-lg-end"><div class="account-email" id="staffEmail">Signed in</div><div class="account-role" id="staffRole">Checking access…</div></div>
@@ -33,8 +33,8 @@
 <main class="admin-main">
     <div class="container-fluid admin-container">
         <div class="admin-heading d-flex flex-wrap align-items-end justify-content-between gap-3">
-            <div><p class="eyebrow mb-2">SCHOOL OPERATIONS</p><h1>Administration overview</h1><p class="text-muted mb-0">A clear view of enrollment, student access, and roll assignment.</p></div>
-            <a class="btn btn-primary" href="admin-students.html"><i class="bi bi-person-plus me-2"></i>Enroll a student</a>
+            <div><p class="eyebrow mb-2">SCHOOL OPERATIONS</p><h1 id="dashboardTitle">Administration overview</h1><p class="text-muted mb-0" id="dashboardSubtitle">A clear view of enrollment, student access, and roll assignment.</p></div>
+            <a class="btn btn-primary" data-can-manage href="admin-students.html"><i class="bi bi-person-plus me-2"></i>Enroll a student</a>
         </div>
         <div id="adminNotice" class="alert d-none" role="status" aria-live="polite"></div>
 
@@ -50,19 +50,23 @@
                 <article class="panel-card h-100">
                     <div class="panel-heading"><div><p class="eyebrow mb-1">QUICK WORKFLOWS</p><h2>What would you like to do?</h2></div><i class="bi bi-arrow-up-right-circle panel-heading-icon"></i></div>
                     <div class="row g-3">
-                        <div class="col-md-4"><a class="workflow-card" href="admin-students.html"><span class="workflow-icon icon-blue"><i class="bi bi-person-plus-fill"></i></span><strong>Enroll students</strong><small>Add approved details and generate a registration ID.</small><span class="workflow-link">Open student records <i class="bi bi-arrow-right"></i></span></a></div>
-                        <div class="col-md-4"><a class="workflow-card" href="roll-allocation.html"><span class="workflow-icon icon-amber"><i class="bi bi-upc-scan"></i></span><strong>Allocate rolls</strong><small>Assign unique college roll numbers to selected students.</small><span class="workflow-link">Open roll allocation <i class="bi bi-arrow-right"></i></span></a></div>
-                        <div class="col-md-4" data-super-admin-only hidden><a class="workflow-card" href="admin-roles.html"><span class="workflow-icon icon-violet"><i class="bi bi-shield-lock-fill"></i></span><strong>Staff access</strong><small>Assign leadership, HOD, and faculty permissions.</small><span class="workflow-link">Manage staff roles <i class="bi bi-arrow-right"></i></span></a></div>
+                        <div class="col-md-4" data-can-manage><a class="workflow-card" href="admin-students.html"><span class="workflow-icon icon-blue"><i class="bi bi-person-plus-fill"></i></span><strong>Manage students</strong><small>Enroll approved students and update their records.</small><span class="workflow-link">Open student records <i class="bi bi-arrow-right"></i></span></a></div>
+                        <div class="col-md-4" data-can-manage><a class="workflow-card" href="roll-allocation.html"><span class="workflow-icon icon-amber"><i class="bi bi-upc-scan"></i></span><strong>Allocate rolls</strong><small>Assign unique college roll numbers to selected students.</small><span class="workflow-link">Open roll allocation <i class="bi bi-arrow-right"></i></span></a></div>
+                        <div class="col-md-4" data-can-manage-staff hidden><a class="workflow-card" href="admin-roles.html"><span class="workflow-icon icon-violet"><i class="bi bi-shield-lock-fill"></i></span><strong>Staff access</strong><small>Manage approved staff roles and delegated access.</small><span class="workflow-link">Manage staff roles <i class="bi bi-arrow-right"></i></span></a></div>
+                        <div class="col-md-4" data-faculty-only hidden><a class="workflow-card" href="admin-students.html"><span class="workflow-icon icon-blue"><i class="bi bi-people-fill"></i></span><strong>Review branch roster</strong><small>See registration and roll status for your assigned branch.</small><span class="workflow-link">Open read-only roster <i class="bi bi-arrow-right"></i></span></a></div>
                     </div>
-                    <div class="permission-note mt-4"><i class="bi bi-shield-check"></i><span>Access is checked again by Supabase for every data change. HODs can manage their own branch; faculty access is read-only.</span></div>
+                    <div class="permission-note mt-3" data-chairman-only hidden><i class="bi bi-bar-chart-line-fill"></i><span>Your Chairman workspace is read-only. The figures above summarize the college roster, linked student accounts, pending rolls, and registrations.</span></div>
+                    <div class="permission-note mt-4"><i class="bi bi-shield-check"></i><span id="permissionNoteText">Access is checked again by Supabase for every data change.</span></div>
                 </article>
             </div>
             <div class="col-xl-4">
                 <article class="panel-card h-100">
                     <div class="panel-heading"><div><p class="eyebrow mb-1">ACCESS LEVELS</p><h2>Staff roles</h2></div><i class="bi bi-person-gear panel-heading-icon"></i></div>
-                    <div class="role-summary"><span class="role-pill role-leadership">Leadership</span><p><strong>Chairman, Principal, Vice Principal</strong><br>Manage all student records and roll assignments.</p></div>
+                    <div class="role-summary"><span class="role-pill role-leadership">Governance</span><p><strong>Chairman</strong><br>College-wide summary and oversight reports.</p></div>
+                    <div class="role-summary"><span class="role-pill role-leadership">Executive leadership</span><p><strong>Principal and Vice Principal</strong><br>Manage school-wide student operations and approved staff access.</p></div>
+                    <div class="role-summary"><span class="role-pill role-registrar">College administration</span><p><strong>Registrar / College Admin</strong><br>Manage admissions, student records, and roll allocation.</p></div>
                     <div class="role-summary"><span class="role-pill role-hod">Department admin</span><p><strong>HOD</strong><br>Manage students and rolls for the assigned branch.</p></div>
-                    <div class="role-summary mb-0"><span class="role-pill role-faculty">Faculty</span><p><strong>Faculty</strong><br>Read-only access to the assigned branch roster.</p></div>
+                    <div class="role-summary mb-0"><span class="role-pill role-faculty">Faculty</span><p><strong>Faculty and students</strong><br>Faculty see their assigned branch roster; students see their own portal.</p></div>
                 </article>
             </div>
         </section>

@@ -241,16 +241,36 @@ create index if not exists student_profiles_roster_admin_idx
 create table if not exists public.user_roles (
     user_id uuid primary key references auth.users (id) on delete cascade,
     role_name text not null check (role_name in (
-        'super_admin', 'chairman', 'principal', 'vice_principal', 'hod', 'faculty'
+        'super_admin', 'chairman', 'principal', 'vice_principal', 'registrar', 'hod', 'faculty'
     )),
     branch_code text,
+    can_manage_staff boolean not null default false,
     assigned_by uuid references auth.users (id) on delete set null,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),
     constraint user_roles_branch_scope_check check (
         (role_name in ('hod', 'faculty') and nullif(btrim(branch_code), '') is not null)
         or (role_name not in ('hod', 'faculty') and branch_code is null)
+    ),
+    constraint user_roles_staff_management_check check (
+        not can_manage_staff or role_name = 'vice_principal'
     )
+);
+
+-- Replace the constraints on every run so existing projects receive the Registrar role.
+alter table public.user_roles add column if not exists can_manage_staff boolean not null default false;
+alter table public.user_roles drop constraint if exists user_roles_role_name_check;
+alter table public.user_roles add constraint user_roles_role_name_check check (role_name in (
+    'super_admin', 'chairman', 'principal', 'vice_principal', 'registrar', 'hod', 'faculty'
+));
+alter table public.user_roles drop constraint if exists user_roles_branch_scope_check;
+alter table public.user_roles add constraint user_roles_branch_scope_check check (
+    (role_name in ('hod', 'faculty') and nullif(btrim(branch_code), '') is not null)
+    or (role_name not in ('hod', 'faculty') and branch_code is null)
+);
+alter table public.user_roles drop constraint if exists user_roles_staff_management_check;
+alter table public.user_roles add constraint user_roles_staff_management_check check (
+    not can_manage_staff or role_name = 'vice_principal'
 );
 
 create table if not exists public.student_id_counters (
@@ -288,16 +308,35 @@ on conflict (id) do nothing;
 create table if not exists public.staff_invites (
     email text primary key,
     role_name text not null check (role_name in (
-        'super_admin', 'chairman', 'principal', 'vice_principal', 'hod', 'faculty'
+        'super_admin', 'chairman', 'principal', 'vice_principal', 'registrar', 'hod', 'faculty'
     )),
     branch_code text,
+    can_manage_staff boolean not null default false,
     invited_by uuid references auth.users (id) on delete set null,
     created_at timestamptz not null default now(),
     constraint staff_invites_email_lower_check check (email = lower(btrim(email))),
     constraint staff_invites_branch_scope_check check (
         (role_name in ('hod', 'faculty') and nullif(btrim(branch_code), '') is not null)
         or (role_name not in ('hod', 'faculty') and branch_code is null)
+    ),
+    constraint staff_invites_staff_management_check check (
+        not can_manage_staff or role_name = 'vice_principal'
     )
+);
+
+alter table public.staff_invites add column if not exists can_manage_staff boolean not null default false;
+alter table public.staff_invites drop constraint if exists staff_invites_role_name_check;
+alter table public.staff_invites add constraint staff_invites_role_name_check check (role_name in (
+    'super_admin', 'chairman', 'principal', 'vice_principal', 'registrar', 'hod', 'faculty'
+));
+alter table public.staff_invites drop constraint if exists staff_invites_branch_scope_check;
+alter table public.staff_invites add constraint staff_invites_branch_scope_check check (
+    (role_name in ('hod', 'faculty') and nullif(btrim(branch_code), '') is not null)
+    or (role_name not in ('hod', 'faculty') and branch_code is null)
+);
+alter table public.staff_invites drop constraint if exists staff_invites_staff_management_check;
+alter table public.staff_invites add constraint staff_invites_staff_management_check check (
+    not can_manage_staff or role_name = 'vice_principal'
 );
 
 alter table public.user_roles enable row level security;
@@ -341,6 +380,24 @@ as $function$
     )
 $function$;
 
+create or replace function public.can_manage_staff_roles()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+    select exists (
+        select 1
+          from public.user_roles as roles
+         where roles.user_id = (select auth.uid())
+           and (
+               roles.role_name in ('super_admin', 'principal')
+               or (roles.role_name = 'vice_principal' and roles.can_manage_staff)
+           )
+    )
+$function$;
+
 create or replace function public.can_view_student_branch(p_branch_code text)
 returns boolean
 language sql
@@ -353,7 +410,7 @@ as $function$
           from public.user_roles as roles
          where roles.user_id = (select auth.uid())
            and (
-               roles.role_name in ('super_admin', 'chairman', 'principal', 'vice_principal')
+               roles.role_name in ('super_admin', 'principal', 'vice_principal', 'registrar')
                or (
                    roles.role_name in ('hod', 'faculty')
                    and upper(btrim(roles.branch_code)) = upper(btrim(p_branch_code))
@@ -374,7 +431,7 @@ as $function$
           from public.user_roles as roles
          where roles.user_id = (select auth.uid())
            and (
-               roles.role_name in ('super_admin', 'chairman', 'principal', 'vice_principal')
+               roles.role_name in ('super_admin', 'principal', 'vice_principal', 'registrar')
                or (
                    roles.role_name = 'hod'
                    and upper(btrim(roles.branch_code)) = upper(btrim(p_branch_code))
@@ -385,14 +442,17 @@ $function$;
 
 revoke all on function public.current_school_role() from public, anon;
 revoke all on function public.is_school_super_admin() from public, anon;
+revoke all on function public.can_manage_staff_roles() from public, anon;
 revoke all on function public.can_view_student_branch(text) from public, anon;
 revoke all on function public.can_manage_student_branch(text) from public, anon;
 grant execute on function public.current_school_role() to authenticated;
 grant execute on function public.is_school_super_admin() to authenticated;
+grant execute on function public.can_manage_staff_roles() to authenticated;
 grant execute on function public.can_view_student_branch(text) to authenticated;
 grant execute on function public.can_manage_student_branch(text) to authenticated;
 
 drop policy if exists "Students read their own profile" on public.student_profiles;
+drop policy if exists "Students and assigned staff read allowed profiles" on public.student_profiles;
 create policy "Students and assigned staff read allowed profiles"
     on public.student_profiles for select to authenticated
     using (
@@ -411,9 +471,13 @@ language plpgsql
 security definer
 set search_path = ''
 as $function$
+declare
+    v_role text := public.current_school_role();
 begin
-    if public.current_school_role() is null then
-        raise exception 'Staff access is required.';
+    if v_role is null or v_role not in (
+        'super_admin', 'principal', 'vice_principal', 'registrar', 'hod'
+    ) then
+        raise exception 'You do not have permission to view administration settings.';
     end if;
 
     return query
@@ -508,7 +572,7 @@ declare
     v_search text := nullif(btrim(p_search), '');
 begin
     if v_role is null or v_role not in (
-        'super_admin', 'chairman', 'principal', 'vice_principal', 'hod', 'faculty'
+        'super_admin', 'principal', 'vice_principal', 'registrar', 'hod', 'faculty'
     ) then
         raise exception 'Staff access is required.';
     end if;
@@ -561,7 +625,7 @@ declare
     v_role text := public.current_school_role();
 begin
     if v_role is null or v_role not in (
-        'super_admin', 'chairman', 'principal', 'vice_principal', 'hod', 'faculty'
+        'super_admin', 'chairman', 'principal', 'vice_principal', 'registrar', 'hod', 'faculty'
     ) then
         raise exception 'Staff access is required.';
     end if;
@@ -572,7 +636,8 @@ begin
            count(*) filter (where profile.roll_number is null)::bigint,
            count(*) filter (where profile.user_id is null)::bigint
       from public.student_profiles as profile
-     where public.can_view_student_branch(profile.branch_code);
+     where v_role = 'chairman'
+        or public.can_view_student_branch(profile.branch_code);
 end;
 $function$;
 
@@ -838,22 +903,26 @@ begin
 end;
 $function$;
 
-create or replace function public.admin_list_staff()
+drop function if exists public.admin_list_staff();
+create function public.admin_list_staff()
 returns table (
     user_id uuid,
     email text,
     display_name text,
     role_name text,
     branch_code text,
+    can_manage_staff boolean,
     assigned_at timestamptz
 )
 language plpgsql
 security definer
 set search_path = ''
 as $function$
+declare
+    v_actor_role text := public.current_school_role();
 begin
-    if not public.is_school_super_admin() then
-        raise exception 'Only the system super admin can manage staff roles.';
+    if not public.can_manage_staff_roles() then
+        raise exception 'You do not have permission to manage staff access.';
     end if;
 
     return query
@@ -862,35 +931,47 @@ begin
            coalesce(nullif(users.raw_user_meta_data ->> 'full_name', ''), split_part(users.email::text, '@', 1)),
            roles.role_name,
            roles.branch_code,
+           roles.can_manage_staff,
            roles.created_at
       from public.user_roles as roles
       join auth.users as users on users.id = roles.user_id
+     where v_actor_role = 'super_admin'
+        or (v_actor_role = 'principal' and roles.role_name in ('vice_principal', 'registrar', 'hod', 'faculty'))
+        or (v_actor_role = 'vice_principal' and roles.role_name in ('registrar', 'hod', 'faculty'))
      order by roles.role_name, users.email;
 end;
 $function$;
 
-create or replace function public.admin_list_pending_staff_invites()
-returns table (email text, role_name text, branch_code text, created_at timestamptz)
+drop function if exists public.admin_list_pending_staff_invites();
+create function public.admin_list_pending_staff_invites()
+returns table (email text, role_name text, branch_code text, can_manage_staff boolean, created_at timestamptz)
 language plpgsql
 security definer
 set search_path = ''
 as $function$
+declare
+    v_actor_role text := public.current_school_role();
 begin
-    if not public.is_school_super_admin() then
-        raise exception 'Only the system super admin can manage staff roles.';
+    if not public.can_manage_staff_roles() then
+        raise exception 'You do not have permission to manage staff access.';
     end if;
 
     return query
-    select invite.email, invite.role_name, invite.branch_code, invite.created_at
+    select invite.email, invite.role_name, invite.branch_code, invite.can_manage_staff, invite.created_at
       from public.staff_invites as invite
+     where v_actor_role = 'super_admin'
+        or (v_actor_role = 'principal' and invite.role_name in ('vice_principal', 'registrar', 'hod', 'faculty'))
+        or (v_actor_role = 'vice_principal' and invite.role_name in ('registrar', 'hod', 'faculty'))
      order by invite.created_at desc;
 end;
 $function$;
 
+drop function if exists public.admin_manage_staff(text, text, text);
 create or replace function public.admin_manage_staff(
     p_email text,
     p_role_name text,
-    p_branch_code text default null
+    p_branch_code text default null,
+    p_can_manage_staff boolean default false
 )
 returns text
 language plpgsql
@@ -901,24 +982,47 @@ declare
     v_email text := lower(btrim(coalesce(p_email, '')));
     v_role text := lower(btrim(coalesce(p_role_name, '')));
     v_branch text := upper(regexp_replace(btrim(coalesce(p_branch_code, '')), '\s+', '', 'g'));
+    v_actor_role text := public.current_school_role();
     v_user_id uuid;
     v_email_confirmed_at timestamptz;
     v_existing_role text;
+    v_existing_invite_role text;
     v_super_admin_count integer;
 begin
-    if not public.is_school_super_admin() then
-        raise exception 'Only the system super admin can manage staff roles.';
+    if not public.can_manage_staff_roles() then
+        raise exception 'You do not have permission to manage staff access.';
     end if;
     if v_email !~ '^[^[:space:]@]+@[^[:space:]@]+[.][^[:space:]@]+$' or v_role not in (
-        'super_admin', 'chairman', 'principal', 'vice_principal', 'hod', 'faculty'
+        'super_admin', 'chairman', 'principal', 'vice_principal', 'registrar', 'hod', 'faculty'
     ) then
         raise exception 'Enter a valid email and staff role.';
+    end if;
+    if coalesce(p_can_manage_staff, false) and v_role <> 'vice_principal' then
+        raise exception 'Staff access delegation is only available for a Vice Principal.';
+    end if;
+    if v_actor_role = 'principal' and v_role not in ('vice_principal', 'registrar', 'hod', 'faculty') then
+        raise exception 'Principals can assign Vice Principal, Registrar, HOD, or Faculty roles.';
+    end if;
+    if v_actor_role = 'vice_principal' and v_role not in ('registrar', 'hod', 'faculty') then
+        raise exception 'Delegated Vice Principals can assign Registrar, HOD, or Faculty roles.';
     end if;
     if v_role in ('hod', 'faculty') and v_branch !~ '^[A-Z0-9]{2,10}$' then
         raise exception 'HOD and faculty accounts need a branch code.';
     end if;
     if v_role not in ('hod', 'faculty') then
         v_branch := null;
+    end if;
+
+    select invite.role_name into v_existing_invite_role
+      from public.staff_invites as invite
+     where invite.email = v_email;
+    if v_existing_invite_role is not null and v_actor_role = 'principal'
+       and v_existing_invite_role not in ('vice_principal', 'registrar', 'hod', 'faculty') then
+        raise exception 'A Principal cannot change this invitation’s role.';
+    end if;
+    if v_existing_invite_role is not null and v_actor_role = 'vice_principal'
+       and v_existing_invite_role not in ('registrar', 'hod', 'faculty') then
+        raise exception 'A delegated Vice Principal cannot change this invitation’s role.';
     end if;
 
     select users.id, users.email_confirmed_at
@@ -931,6 +1035,14 @@ begin
         select roles.role_name into v_existing_role
           from public.user_roles as roles
          where roles.user_id = v_user_id;
+        if v_existing_role is not null and v_actor_role = 'principal'
+           and v_existing_role not in ('vice_principal', 'registrar', 'hod', 'faculty') then
+            raise exception 'A Principal cannot change this staff member’s role.';
+        end if;
+        if v_existing_role is not null and v_actor_role = 'vice_principal'
+           and v_existing_role not in ('registrar', 'hod', 'faculty') then
+            raise exception 'A delegated Vice Principal cannot change this staff member’s role.';
+        end if;
         if v_existing_role = 'super_admin' and v_role <> 'super_admin' then
             select count(*) into v_super_admin_count
               from public.user_roles as roles
@@ -941,32 +1053,35 @@ begin
         end if;
 
         if v_email_confirmed_at is null then
-            insert into public.staff_invites (email, role_name, branch_code, invited_by)
-            values (v_email, v_role, v_branch, (select auth.uid()))
+            insert into public.staff_invites (email, role_name, branch_code, can_manage_staff, invited_by)
+            values (v_email, v_role, v_branch, coalesce(p_can_manage_staff, false), (select auth.uid()))
             on conflict (email) do update
                set role_name = excluded.role_name,
                    branch_code = excluded.branch_code,
+                   can_manage_staff = excluded.can_manage_staff,
                    invited_by = excluded.invited_by,
                    created_at = now();
             return 'invite_pending';
         end if;
 
-        insert into public.user_roles (user_id, role_name, branch_code, assigned_by, updated_at)
-        values (v_user_id, v_role, v_branch, (select auth.uid()), now())
+        insert into public.user_roles (user_id, role_name, branch_code, can_manage_staff, assigned_by, updated_at)
+        values (v_user_id, v_role, v_branch, coalesce(p_can_manage_staff, false), (select auth.uid()), now())
         on conflict (user_id) do update
            set role_name = excluded.role_name,
                branch_code = excluded.branch_code,
+               can_manage_staff = excluded.can_manage_staff,
                assigned_by = excluded.assigned_by,
                updated_at = now();
         delete from public.staff_invites where email = v_email;
         return 'assigned';
     end if;
 
-    insert into public.staff_invites (email, role_name, branch_code, invited_by)
-    values (v_email, v_role, v_branch, (select auth.uid()))
+    insert into public.staff_invites (email, role_name, branch_code, can_manage_staff, invited_by)
+    values (v_email, v_role, v_branch, coalesce(p_can_manage_staff, false), (select auth.uid()))
     on conflict (email) do update
        set role_name = excluded.role_name,
            branch_code = excluded.branch_code,
+           can_manage_staff = excluded.can_manage_staff,
            invited_by = excluded.invited_by,
            created_at = now();
     return 'invite_pending';
@@ -980,11 +1095,12 @@ security definer
 set search_path = ''
 as $function$
 declare
+    v_actor_role text := public.current_school_role();
     v_target_role text;
     v_super_admin_count integer;
 begin
-    if not public.is_school_super_admin() then
-        raise exception 'Only the system super admin can manage staff roles.';
+    if not public.can_manage_staff_roles() then
+        raise exception 'You do not have permission to manage staff access.';
     end if;
 
     select roles.role_name into v_target_role
@@ -992,6 +1108,12 @@ begin
      where roles.user_id = p_user_id;
     if not found then
         raise exception 'Staff role not found.';
+    end if;
+    if v_actor_role = 'principal' and v_target_role not in ('vice_principal', 'registrar', 'hod', 'faculty') then
+        raise exception 'A Principal cannot remove this staff role.';
+    end if;
+    if v_actor_role = 'vice_principal' and v_target_role not in ('registrar', 'hod', 'faculty') then
+        raise exception 'A delegated Vice Principal cannot remove this staff role.';
     end if;
     if v_target_role = 'super_admin' then
         select count(*) into v_super_admin_count
@@ -1013,10 +1135,20 @@ security definer
 set search_path = ''
 as $function$
 begin
-    if not public.is_school_super_admin() then
-        raise exception 'Only the system super admin can manage staff roles.';
+    if not public.can_manage_staff_roles() then
+        raise exception 'You do not have permission to manage staff access.';
     end if;
-    delete from public.staff_invites where email = lower(btrim(p_email));
+    if public.current_school_role() = 'principal' then
+        delete from public.staff_invites
+         where email = lower(btrim(p_email))
+           and role_name in ('vice_principal', 'registrar', 'hod', 'faculty');
+    elsif public.current_school_role() = 'vice_principal' then
+        delete from public.staff_invites
+         where email = lower(btrim(p_email))
+           and role_name in ('registrar', 'hod', 'faculty');
+    else
+        delete from public.staff_invites where email = lower(btrim(p_email));
+    end if;
 end;
 $function$;
 
@@ -1079,11 +1211,12 @@ begin
      where pending.email = lower(btrim(new.email::text))
      for update;
     if found then
-        insert into public.user_roles (user_id, role_name, branch_code, assigned_by, updated_at)
-        values (new.id, invite.role_name, invite.branch_code, invite.invited_by, now())
+        insert into public.user_roles (user_id, role_name, branch_code, can_manage_staff, assigned_by, updated_at)
+        values (new.id, invite.role_name, invite.branch_code, invite.can_manage_staff, invite.invited_by, now())
         on conflict (user_id) do update
            set role_name = excluded.role_name,
                branch_code = excluded.branch_code,
+               can_manage_staff = excluded.can_manage_staff,
                assigned_by = excluded.assigned_by,
                updated_at = now();
         delete from public.staff_invites where email = invite.email;
@@ -1115,7 +1248,7 @@ revoke all on function public.admin_update_student(uuid, text, text, smallint, s
 revoke all on function public.admin_allocate_student_roll(uuid) from public, anon;
 revoke all on function public.admin_list_staff() from public, anon;
 revoke all on function public.admin_list_pending_staff_invites() from public, anon;
-revoke all on function public.admin_manage_staff(text, text, text) from public, anon;
+revoke all on function public.admin_manage_staff(text, text, text, boolean) from public, anon;
 revoke all on function public.admin_remove_staff_role(uuid) from public, anon;
 revoke all on function public.admin_cancel_staff_invite(text) from public, anon;
 revoke all on function public.validate_student_roster_signup() from public, anon;
@@ -1130,7 +1263,7 @@ grant execute on function public.admin_update_student(uuid, text, text, smallint
 grant execute on function public.admin_allocate_student_roll(uuid) to authenticated;
 grant execute on function public.admin_list_staff() to authenticated;
 grant execute on function public.admin_list_pending_staff_invites() to authenticated;
-grant execute on function public.admin_manage_staff(text, text, text) to authenticated;
+grant execute on function public.admin_manage_staff(text, text, text, boolean) to authenticated;
 grant execute on function public.admin_remove_staff_role(uuid) to authenticated;
 grant execute on function public.admin_cancel_staff_invite(text) to authenticated;
 
