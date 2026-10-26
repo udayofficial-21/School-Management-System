@@ -6,7 +6,7 @@
 
 do $bootstrap$
 declare
-    admin_email text := lower(btrim('REPLACE_WITH_ADMIN_EMAIL'));
+    admin_email text := lower(btrim('udayofficial21@gmail.com'));
     admin_user_id uuid;
     email_confirmed_at timestamptz;
 begin
