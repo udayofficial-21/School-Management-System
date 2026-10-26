@@ -4,6 +4,8 @@
 
 This is a static website hosted on GitHub Pages, using Supabase for sign-in and its database.
 
+The public [interactive demo](https://udayofficial-21.github.io/School-Management-System/demo.html) shows fictional Student and Admin workspaces. It does not connect to Supabase or save changes.
+
 - Students and staff use the same sign-in page. After sign-in, the assigned role opens the student portal or the staff administration workspace.
 - School staff enroll students before registration. A student account is linked only when the student enters the matching registration ID and school email and confirms that email.
 - Super Admin manages system settings and every school role.
