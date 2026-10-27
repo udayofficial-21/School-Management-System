@@ -1,6 +1,6 @@
 # Beginner walkthrough: prepare student and staff registration
 
-This guide is written for someone who has not used Supabase before. Follow the numbered steps in order. Do not upload real student information to the demo CSV or to this chat.
+This guide is written for someone who has not used Supabase before. Follow the numbered steps in order. Only enter student information that the school has approved for this system.
 
 ## Before you start
 
@@ -84,7 +84,7 @@ Role guide:
 5. Open Roll allocation, select the student, and click Allocate selected rolls. The college code and branch code are included in the roll number.
 6. Give the student their registration ID and the exact school email entered in the roster.
 
-Do not use the fictional records in supabase/student-roster-demo.csv for real email testing. Use the blank supabase/student-roster-template.csv only when you need to import a real school-approved roster from the Supabase Table Editor.
+Use the blank supabase/student-roster-template.csv when you need to import a school-approved roster from the Supabase Table Editor.
 
 ## Step 7: Student registration and sign-in
 

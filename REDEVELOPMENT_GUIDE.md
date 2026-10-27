@@ -4,11 +4,6 @@
 
 This is a static website hosted on GitHub Pages, using Supabase for sign-in and its database.
 
-The public [interactive demo](https://udayofficial-21.github.io/School-Management-System/demo.html) has separate Student and Principal/Admin sample sign-ins. Admin users can add a fictional student and allocate a sample roll during the session; signing out resets these temporary changes. The demo never connects to Supabase or changes real records.
-
-- Student demo: `student.demo@example.com` / `StudentDemo2026!`
-- Principal/Admin demo: `principal.demo@example.com` / `AdminDemo2026!`
-
 - Students and staff use the same sign-in page. After sign-in, the assigned role opens the student portal or the staff administration workspace.
 - School staff enroll students before registration. A student account is linked only when the student enters the matching registration ID and school email and confirms that email.
 - Super Admin manages system settings and every school role.
@@ -55,7 +50,7 @@ After the first Super Admin signs in, use Staff access to assign Chairman, Princ
 4. Give each student their registration ID and the school email that was entered in the roster.
 5. The student opens Register here, enters that exact ID and email, chooses a password, and confirms the email. They then sign in on the shared login page.
 
-The CSV in supabase/student-roster-demo.csv contains fictional sample rows only. Do not import those sample email addresses as real students. Use supabase/student-roster-template.csv for a real, approved roster.
+For bulk imports, use supabase/student-roster-template.csv and fill it only with school-approved student records.
 
 ## Preview and publish
 
