@@ -5,6 +5,7 @@
 This is a static website hosted on GitHub Pages, using Supabase for sign-in and its database.
 
 - Students and staff use the same sign-in page. After sign-in, the assigned role opens the student portal or the staff administration workspace.
+- Existing students and staff can sign in with either their password or a one-time email code. Email-code sign-in does not create new accounts or grant roles.
 - School staff enroll students before registration. A student account is linked only when the student enters the matching registration ID and school email and confirms that email.
 - Super Admin manages system settings and every school role.
 - Chairman receives college-wide summary reports and has no student-record editing access.
@@ -27,20 +28,23 @@ The separate roll number is allocated from the school format. The default templa
 2. The project URL and publishable key are in supabase-config.js. Only a publishable key belongs in the website. Never add a secret or service-role key.
 3. In Authentication → URL Configuration, allow the deployed site and the local preview address:
    - https://udayofficial-21.github.io/School-Management-System/index.html
+   - https://udayofficial-21.github.io/School-Management-System/account-security.html
    - http://localhost:8000/index.html
+   - http://localhost:8000/account-security.html
 4. Keep email confirmation enabled.
+5. Configure custom SMTP before sending real school emails. To receive a numeric code, set the Supabase Magic link or OTP template to include `{{ .Token }}`. Follow Step 2A in [SUPABASE_SETUP_WALKTHROUGH.md](SUPABASE_SETUP_WALKTHROUGH.md).
 
 ## First Super Admin
 
 There is no public Admin sign-up. This prevents students from giving themselves staff permissions.
 
-1. Open supabase/bootstrap-admin.sql and replace REPLACE_WITH_ADMIN_EMAIL with the first Super Admin's email address.
-2. Run that edited file in the Supabase SQL Editor. If the email already has a confirmed account, the role is assigned immediately.
+1. Open supabase/bootstrap-admin.sql and confirm its email is the first Super Admin's intended address (`udayofficial21@gmail.com` is currently entered).
+2. Run the file in the Supabase SQL Editor. If the email already has a confirmed account, the role is assigned immediately.
 3. If it is a new or unconfirmed account, open Supabase Authentication → Users and send an invitation to that same email.
-4. The person opens the invitation email and finishes account setup. The database then assigns the Super Admin role.
-5. Sign in through the same website login page. The Super Admin workspace opens automatically.
+4. The person opens the invitation email and accepts it. The database then assigns the Super Admin role.
+5. From Administration overview, open Account security to create a personal password. The password belongs to the user; administrators never create or share it. They can also sign in using a one-time email code.
 
-After the first Super Admin signs in, use Staff access to assign Chairman, Principal, Vice Principal, Registrar, HOD, Faculty, or additional Super Admin roles. The Principal can assign Vice Principal, Registrar, HOD, and Faculty roles. A Vice Principal receives staff-role controls only when the Super Admin or Principal explicitly delegates them; delegated Vice Principals can manage Registrar, HOD, and Faculty roles. For a new staff email, the app prepares the role invitation; send the actual account invitation from Supabase Authentication → Users. The role activates after email confirmation.
+After the first Super Admin signs in, use Staff access to assign Chairman, Principal, Vice Principal, Registrar, HOD, Faculty, or additional Super Admin roles. The Principal can assign Vice Principal, Registrar, HOD, and Faculty roles. A Vice Principal receives staff-role controls only when the Super Admin or Principal explicitly delegates them; delegated Vice Principals can manage Registrar, HOD, and Faculty roles. For a new staff email, the app prepares the role first. Then open Supabase Authentication → Users → Add user → Send invitation and enter the same email. The staff member clicks the secure invitation, chooses their own password under Account security, or uses Continue with email. Their role activates after confirmation.
 
 ## School setup and daily use
 
@@ -48,7 +52,7 @@ After the first Super Admin signs in, use Staff access to assign Chairman, Princ
 2. Open Students and add an approved student. Enter the name, school email, admission year, branch name, branch code, and any details the school needs. The app generates the registration ID.
 3. Open Roll allocation, select eligible students, and allocate their unique roll numbers.
 4. Give each student their registration ID and the school email that was entered in the roster.
-5. The student opens Register here, enters that exact ID and email, chooses a password, and confirms the email. They then sign in on the shared login page.
+5. The student opens Register here, enters that exact ID and email, chooses a password, and confirms the email. On future visits, they can sign in with that password or Continue with email.
 
 For bulk imports, use supabase/student-roster-template.csv and fill it only with school-approved student records.
 

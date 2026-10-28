@@ -201,3 +201,6 @@ footer .container { border-top: 1px solid var(--line); padding-top: 1.1rem; }
     .chart-panel { min-height: 280px; }
     .chart-panel canvas { height: 280px !important; }
 }
+.letter-spacing-code {
+    letter-spacing: .35em;
+}

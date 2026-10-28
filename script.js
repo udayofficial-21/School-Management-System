@@ -38,6 +38,9 @@ async function startApplication() {
             await supabase.auth.signOut();
         }
         initializeLogin(loginForm);
+        initializeAuthMethodSwitch();
+        initializeEmailCodeSignIn();
+        initializePasswordReset();
         return;
     }
 
@@ -84,6 +87,7 @@ function initializeLogin(form) {
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
         clearFormMessage(feedback);
+        if (!emailInput.reportValidity()) return;
         setSubmitState(form, true, 'Signing in…');
         try {
             const { data, error } = await supabase.auth.signInWithPassword({
@@ -106,6 +110,141 @@ function initializeLogin(form) {
             showFormMessage(feedback, 'We could not verify your school account. Ask the administrator to finish the database setup, then try again.', 'danger');
         } finally {
             setSubmitState(form, false);
+        }
+    });
+}
+
+function initializeAuthMethodSwitch() {
+    const emailInput = document.getElementById('loginEmail');
+    const panels = {
+        password: document.getElementById('passwordPanel'),
+        email: document.getElementById('emailPanel')
+    };
+    document.querySelectorAll('[data-auth-method]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const selectedMethod = button.dataset.authMethod;
+            Object.entries(panels).forEach(([method, panel]) => {
+                if (panel) panel.hidden = method !== selectedMethod;
+            });
+            if (emailInput) emailInput.readOnly = selectedMethod === 'email' && !document.getElementById('emailCodeVerifyStage')?.hidden;
+            document.querySelectorAll('[data-auth-method]').forEach((tab) => {
+                const selected = tab.dataset.authMethod === selectedMethod;
+                tab.classList.toggle('active', selected);
+                tab.setAttribute('aria-selected', String(selected));
+            });
+        });
+    });
+}
+
+function initializeEmailCodeSignIn() {
+    const emailInput = document.getElementById('loginEmail');
+    const sendButton = document.getElementById('sendEmailCodeBtn');
+    const resendButton = document.getElementById('resendEmailCodeBtn');
+    const verifyButton = document.getElementById('verifyEmailCodeBtn');
+    const changeEmailButton = document.getElementById('changeEmailBtn');
+    const requestStage = document.getElementById('emailCodeRequestStage');
+    const verifyStage = document.getElementById('emailCodeVerifyStage');
+    const codeInput = document.getElementById('emailCode');
+    const codeHelp = document.getElementById('emailCodeHelp');
+    const feedback = document.getElementById('emailCodeMessage');
+    if (!sendButton || !verifyButton || !emailInput || !codeInput) return;
+    let requestedEmail = '';
+
+    const sendCode = async (button = sendButton) => {
+        clearFormMessage(feedback);
+        if (!emailInput.reportValidity()) return;
+        setActionBusy(button, true, 'Sending code…');
+        try {
+            requestedEmail = emailInput.value.trim().toLowerCase();
+            const { error } = await supabase.auth.signInWithOtp({
+                email: requestedEmail,
+                options: {
+                    shouldCreateUser: false,
+                    emailRedirectTo: new URL('index.html', window.location.href).toString()
+                }
+            });
+            if (error) {
+                showFormMessage(feedback, 'We could not send a sign-in email. Check the address and SMTP settings, or wait a minute before requesting another email.', 'danger');
+                return;
+            }
+            requestStage.hidden = true;
+            verifyStage.hidden = false;
+            emailInput.readOnly = true;
+            codeInput.disabled = false;
+            codeHelp.textContent = `We sent a sign-in email to ${requestedEmail}. Enter its code below, or open its sign-in link if the email contains one.`;
+            codeInput.focus();
+            showFormMessage(feedback, 'If this email belongs to an active school account, a sign-in email is on its way. Enter its code here, or open its sign-in link if the email contains a link.', 'success');
+        } catch (error) {
+            console.error('Could not send a passwordless sign-in email.', error);
+            showFormMessage(feedback, 'We could not send a sign-in email. Check your connection and try again.', 'danger');
+        } finally {
+            setActionBusy(button, false);
+        }
+    };
+
+    sendButton.addEventListener('click', () => sendCode(sendButton));
+    resendButton?.addEventListener('click', () => sendCode(resendButton));
+    verifyButton.addEventListener('click', async () => {
+        clearFormMessage(feedback);
+        const email = requestedEmail;
+        const token = codeInput.value.trim().replace(/\s+/g, '');
+        if (!email || !emailInput.reportValidity()) return;
+        if (!/^\d{6,8}$/.test(token)) {
+            showFormMessage(feedback, 'Enter the one-time code from your email.', 'warning');
+            codeInput.focus();
+            return;
+        }
+
+        setActionBusy(verifyButton, true, 'Verifying…');
+        try {
+            const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+            if (error || !data.user) {
+                showFormMessage(feedback, 'That code could not be verified. Check it and try again, or request a new code.', 'danger');
+                return;
+            }
+            await routeSignedInUser(data.user.id, feedback);
+        } catch (error) {
+            console.error('Could not verify the email sign-in code.', error);
+            showFormMessage(feedback, 'We could not verify the code. Check your connection and try again.', 'danger');
+        } finally {
+            setActionBusy(verifyButton, false);
+        }
+    });
+
+    changeEmailButton?.addEventListener('click', () => {
+        codeInput.value = '';
+        codeInput.disabled = true;
+        verifyStage.hidden = true;
+        requestStage.hidden = false;
+        emailInput.readOnly = false;
+        clearFormMessage(feedback);
+        emailInput.focus();
+    });
+}
+
+function initializePasswordReset() {
+    const button = document.getElementById('forgotPasswordBtn');
+    const emailInput = document.getElementById('loginEmail');
+    const feedback = document.getElementById('passwordResetMessage');
+    if (!button || !emailInput) return;
+
+    button.addEventListener('click', async () => {
+        clearFormMessage(feedback);
+        if (!emailInput.reportValidity()) return;
+        setActionBusy(button, true, 'Sending…');
+        try {
+            const redirectTo = new URL('account-security.html', window.location.href).toString();
+            const { error } = await supabase.auth.resetPasswordForEmail(emailInput.value.trim().toLowerCase(), { redirectTo });
+            if (error) {
+                showFormMessage(feedback, 'We could not send a password reset email. Check the address or ask the school administrator to check Supabase email settings.', 'danger');
+                return;
+            }
+            showFormMessage(feedback, 'If this email has a school account, password reset instructions will arrive shortly.', 'success');
+        } catch (error) {
+            console.error('Could not request a password reset.', error);
+            showFormMessage(feedback, 'We could not send a reset email. Check your connection and try again.', 'danger');
+        } finally {
+            setActionBusy(button, false);
         }
     });
 }
@@ -743,6 +882,21 @@ function setSubmitState(form, isLoading, loadingLabel = 'Please wait…') {
     } else {
         button.disabled = false;
         button.textContent = button.dataset.originalLabel || 'Submit';
+    }
+}
+
+function setActionBusy(button, isLoading, loadingLabel = 'Please wait…') {
+    if (!button) return;
+    if (isLoading) {
+        if (!button.dataset.originalHtml) button.dataset.originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.textContent = loadingLabel;
+    } else {
+        button.disabled = false;
+        if (button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+            delete button.dataset.originalHtml;
+        }
     }
 }
 

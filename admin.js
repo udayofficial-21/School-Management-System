@@ -580,7 +580,7 @@ async function submitStaffRole(event) {
     const result = Array.isArray(data) ? data[0] : data;
     const delegation = canManageStaff ? ' with delegated staff access' : '';
     if (result === 'invite_pending') {
-        showNotice(`Role invitation prepared for ${email}${delegation}. Send or resend the invite from Supabase Authentication → Users; the role activates after the person confirms their email.`, 'success');
+        showNotice(`Role prepared for ${email}${delegation}. Next, send an invitation from Supabase Authentication → Users using this same email. The staff member confirms the account and sets their own password; never create or share a password for them.`, 'success');
     } else {
         showNotice(`The ${ROLE_LABELS[role]} role${delegation} is active for ${email}.`, 'success');
     }

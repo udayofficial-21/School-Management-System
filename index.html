@@ -22,34 +22,60 @@
                             <p class="text-muted">Students and school staff use the same secure sign-in.</p>
                         </div>
                         <div id="supabaseSetupNotice" class="alert alert-warning d-none" role="status"></div>
-                        <form id="loginForm">
-                            <div class="mb-3">
-                                <label for="loginEmail" class="form-label">School email</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                    <input type="email" class="form-control" id="loginEmail" placeholder="name@school.edu" autocomplete="username" required>
+                        <div class="mb-3">
+                            <label for="loginEmail" class="form-label">School email</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                <input type="email" class="form-control" id="loginEmail" placeholder="name@school.edu" autocomplete="username" required>
+                            </div>
+                        </div>
+                        <div class="btn-group w-100 mb-3" role="tablist" aria-label="Choose a sign-in method">
+                            <button class="btn btn-outline-primary active" id="passwordTab" type="button" role="tab" aria-selected="true" aria-controls="passwordPanel" data-auth-method="password">Use password</button>
+                            <button class="btn btn-outline-primary" id="emailTab" type="button" role="tab" aria-selected="false" aria-controls="emailPanel" data-auth-method="email">Continue with email</button>
+                        </div>
+                        <section id="passwordPanel" role="tabpanel" aria-labelledby="passwordTab">
+                            <form id="loginForm">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                        <input type="password" class="form-control" id="password" placeholder="Enter your password" autocomplete="current-password" required>
+                                        <button class="btn btn-outline-secondary" type="button" data-password-toggle aria-controls="password" aria-label="Show password" aria-pressed="false">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center gap-3 mt-4">
+                                    <button class="btn btn-link p-0 text-decoration-none" id="forgotPasswordBtn" type="button">Forgot password?</button>
+                                    <button type="submit" class="btn btn-primary">Sign in <i class="bi bi-box-arrow-in-right ms-1"></i></button>
+                                </div>
+                                <div id="loginError" class="alert alert-danger mt-3 d-none" role="status" aria-live="polite" tabindex="-1"></div>
+                                <div id="passwordResetMessage" class="alert d-none mt-3" role="status" aria-live="polite"></div>
+                            </form>
+                        </section>
+                        <section id="emailPanel" role="tabpanel" aria-labelledby="emailTab" hidden>
+                            <p class="small text-muted">We’ll send a secure sign-in email. Enter its one-time code, or open its sign-in link. This works for existing, school-approved student and staff accounts.</p>
+                            <div id="emailCodeRequestStage">
+                                <div class="d-grid mt-4">
+                                    <button class="btn btn-primary" id="sendEmailCodeBtn" type="button">Send sign-in email <i class="bi bi-envelope-arrow-up ms-1"></i></button>
                                 </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="password" class="form-label">Password</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                                    <input type="password" class="form-control" id="password" placeholder="Enter your password" autocomplete="current-password" required>
-                                    <button class="btn btn-outline-secondary" type="button" data-password-toggle aria-controls="password" aria-label="Show password" aria-pressed="false">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
+                            <div id="emailCodeVerifyStage" hidden>
+                                <label for="emailCode" class="form-label">One-time email code</label>
+                                <input type="text" class="form-control text-center fs-4 letter-spacing-code" id="emailCode" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="000000" aria-describedby="emailCodeHelp" disabled>
+                                <div id="emailCodeHelp" class="form-text">Check your inbox and enter the one-time code from Supabase Auth.</div>
+                                <div class="d-grid gap-2 mt-3">
+                                    <button class="btn btn-primary" id="verifyEmailCodeBtn" type="button">Verify code and sign in</button>
+                                    <button class="btn btn-link" id="resendEmailCodeBtn" type="button">Resend email</button>
+                                    <button class="btn btn-link" id="changeEmailBtn" type="button">Use another email</button>
                                 </div>
                             </div>
-                            <div class="d-grid gap-2 mt-4">
-                                <button type="submit" class="btn btn-primary">Login <i class="bi bi-box-arrow-in-right ms-1"></i></button>
-                            </div>
-                            <div id="loginError" class="alert alert-danger mt-3 d-none" tabindex="-1">
-                                We could not sign you in. Check your school email and password, then try again.
-                            </div>
-                        </form>
+                            <div id="emailCodeMessage" class="alert d-none mt-3" role="status" aria-live="polite"></div>
+                        </section>
                         <div class="text-center mt-4">
                             <p>New student? <a href="register.html" class="text-decoration-none">Register here</a></p>
                             <p class="small text-muted mb-0">Students need a school-approved registration ID. Staff access is assigned by the Super Admin.</p>
+                            <p class="small text-muted mt-3 mb-0">Your browser remembers your sign-in, so you normally won’t need a new code on every visit.</p>
                         </div>
                     </div>
                 </div>
